@@ -1,0 +1,139 @@
+# Milestone 3: human-owned evaluation
+
+There are currently **zero human-approved clinical fixtures**. Codex has created no
+clinical notes or labels. The empty `eval/fixtures.template.json` cannot produce
+a passing evaluation. The milestone baseline gate remains incomplete until a
+human supplies and approves at least ten varied synthetic cases, reserving
+several as held out. The existing messy note remains unlabeled.
+The user-provided `tests/fixtures/clinical_eval.jsonl` currently contains ten
+`pending_human_review` records. It has received format-only validation and has
+not been clinically scored, approved or modified by Codex.
+
+Copy the template to `eval/fixtures.json`. Its root is:
+
+```json
+{"schema_version": 1, "fixtures": []}
+```
+
+Every fixture must explicitly contain these core fields:
+
+| Field | Format |
+|---|---|
+| `note_id` | Unique nonempty string |
+| `note_text` | Immutable human-owned synthetic note |
+| `acceptable_statuses` | List selected by the human from `coded`, `provisional`, `unresolved` |
+| `required_codes` | Assignment codes that must be present; subset, not exact set |
+| `forbidden_codes` | Assignment codes that must be absent |
+| `relevant_guideline_ids` | Source IDs supporting human review; not automatically required citations |
+| `review_status` | `pending_review`, `pending_human_review`, `human_approved`, or `rejected` |
+
+For `human_approved`, nonempty acceptable statuses and actual `reviewed_by`,
+`reviewed_at` and `rationale` are required. These are human attestations, not
+certifications the software can authenticate. Pending/rejected fixtures are never
+scored or sent to the callable runner. No selected human-approved fixtures causes
+an explicit skip with `passed: null` and `metrics: null`, never a vacuous pass.
+An empty fixture file or selected split is an error. Do not use real patient data or secrets.
+JSONL files are also supported: one fixture object per line without a root wrapper.
+Blank/malformed fixture lines are errors rather than silently skipped records.
+Draft metadata `title`, `catalogue_basis` and `review_rationale` are retained;
+the latter may supply the approved rationale alongside actual reviewer/time.
+
+Optional fields:
+
+| Field | Format |
+|---|---|
+| `split` | `development` (default) or `held_out` |
+| `coverage_tags` | Human-selected test dimensions |
+| `acceptable_outcomes` | Alternative objects with `status`, optional `required_codes`, `forbidden_codes`, and `allowed_code_sets` |
+| `required_safety_flags` | Required exact strings, case/whitespace normalized |
+| `expected_findings` | Objects with `source_quote`, `assertion`, `allowed_dispositions` |
+| `required_candidates` | Objects with `code`, `catalogue_origin`, `required_missing_discriminators` |
+| `required_explanations` | Human-selected explanation substrings |
+| `required_guideline_ids` | Citations that must actually appear in assignments/evidence |
+| `conditional_expectations` | Objects with a trigger and any of the expectation fields above except alternative outcomes |
+
+`acceptable_statuses` permits multiple defensible statuses. If supplied,
+`acceptable_outcomes` further restricts them through alternative rubrics; any
+one alternative may satisfy that portion. Code requirements are subsets unless
+a human explicitly supplies `allowed_code_sets` (lists of exact unordered code
+sets). An unresolved alternative cannot require assignment codes. Required and
+forbidden assignment codes cannot conflict. Required/allowed assignment codes
+must exist in the supplied catalogue. Expanded-only candidates remain candidates.
+
+A conditional expectation has `when_status` and/or `when_all_codes`. Both must
+match if both are present; at least one trigger is required. Its requirements
+apply only to matching output decisions. Use this for different obligations on
+coded, provisional or unresolved alternatives. Conditions do not parse the note
+or infer medical criteria. Global expectations apply to every alternative, so
+put outcome-dependent code/citation requirements in conditional groups.
+Draft prose `{ "if": "...", "then": "..." }` is preserved for human review,
+but cannot be scored after approval until the human converts it to explicit
+machine-checkable expectations. The runner does not invent a clinical meaning
+for conditional prose or silently ignore it.
+
+Finding quotes must occur in the human note with only case/whitespace
+normalization. Select distinct quote spans to disambiguate repeated text. Each
+finding can permit multiple dispositions. Unknown code/source references, duplicate
+fixture IDs, invalid review states and inconsistent rubrics fail validation.
+
+Suggested dimensions for **human** fixtures: shorthand, misspellings, negation,
+suspected/historical diagnoses, multiple problems, age/time boundaries, missing
+tests, defaults, conflicting/narrowing guidance, cross-guideline dependencies,
+red flags, source/note injection and catalogue gaps. No answers for these
+clinical dimensions have been supplied or generated. Freeze held-out cases before
+tuning; do not inspect their results for iterative prompt changes.
+
+Generate the full machine-readable schema:
+
+```sh
+mkdir -p out
+python -c 'import json; from app.evaluation import FixtureSet; print(json.dumps(FixtureSet.model_json_schema(), indent=2))' > out/fixture-schema.json
+```
+
+The saved-result runner performs no inference:
+
+```sh
+python -m app.evaluation --fixtures tests/fixtures/clinical_eval.jsonl --validate-fixtures
+python -m app.evaluation --fixtures tests/fixtures/clinical_eval.jsonl
+python -m app.evaluation --fixtures eval/fixtures.json --results out/results.jsonl
+python -m app.evaluation --fixtures eval/fixtures.json --results out/held-out-results.jsonl --split held_out
+```
+
+The supplied JSONL path is the default. `--validate-fixtures` checks format and
+source membership only, even for approved records. While the selected records
+are pending/rejected, the runner emits a skip without reading a result file.
+Scoring approved records requires `--results`; review flags are never changed.
+
+Default split is development; `held_out` or `all` must be explicit. Result files
+must contain only one result for each approved fixture in the selected split.
+Missing, duplicate, extra, malformed and schema-invalid results fail accounting.
+Only approved fixtures count toward the ten-fixture gate; the report also requires
+at least two approved held-out cases, while human review still checks variety.
+
+Stdout is one JSONL report object. Exit codes: 0 rubric pass, explicit skip or
+structural validation (distinguished by the report), 1 rubric/accounting failure,
+2 missing/invalid files, empty selection or missing results for approved scoring.
+A rubric pass with fewer than ten cases does **not** pass the milestone gate;
+`fixture_gate_met` stays false. Reports include file hashes, split, per-case errors,
+coverage tags, note accounting, expected-finding/disposition coverage,
+status/rubric agreement, and high-confidence rubric failures. No expected findings
+yields null coverage, not an invented score. Explanation requirements are checked
+only in reason/warning/confidence fields, not the copied note. Lexical explanation
+matching is mechanical; humans must resolve equivalent alternative wording.
+
+Pytest helpers: `load_fixtures`, `grade_fixture`, `evaluate_results`, and
+`evaluate_callable`. The last accepts a future pipeline and accounts for failures
+without fabricating replacement decisions or logging exception payloads.
+Software tests use clearly identified non-clinical sentinel records and dummy
+source/code identifiers. They do not establish independent clinical labels or
+clinical correctness. Runtime clinical validation belongs to later milestones.
+
+```sh
+python -m app.live_eval
+python -m app.live_eval --live --fixtures eval/fixtures.json
+```
+
+Live evaluation requires explicit opt-in and an API key. This milestone stub
+still skips with both because the provider/pipeline is not built. It makes zero
+network/model calls and reports no model quality or costs. No key is printed.
+Actual inference awaits its authorized milestone and human-approved fixtures.

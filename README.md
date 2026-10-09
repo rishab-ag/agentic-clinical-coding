@@ -1,8 +1,8 @@
 # Agentic clinical coding
 
-Milestones 1–2: Python CLI scaffold, Pydantic contracts, immutable supplied corpus
-loaders, and an offline guideline review workflow. No retrieval, clinical coding,
-or model calls yet.
+Milestones 1–3 scaffolding: Python CLI, Pydantic contracts, immutable supplied
+corpus loaders, guideline review, and evaluation runners. No retrieval,
+clinical coding, or model calls yet.
 
 Use Python 3.9+:
 
@@ -27,4 +27,6 @@ human review. See [the review workflow](docs/guideline_review.md) for source
 quotes/hashes, three-valued evaluation, proposed relationships and trust warnings.
 
 Built with Codex. Clinical evaluation and live model testing have not occurred.
+The [evaluation harness](docs/evaluation.md) awaits human approval of fixtures;
+the live runner currently skips without making model calls.
 Later milestones remain subject to human review; Codex does not commit.
