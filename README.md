@@ -1,45 +1,67 @@
 # Agentic clinical coding
 
-Milestones 1–7 infrastructure: Python CLI, Pydantic contracts, immutable supplied corpus loaders,
-guideline review, ingestion, BM25 and an optional two-stage OpenAI adapter.
-Without credentials the pipeline returns unresolved results. With a configured
-model/context limit it validates model proposals against original-note evidence.
+Python CLI for TXT/JSON/JSONL notes: BM25 retrieval, optional two-stage model
+reasoning, grounded evidence validation and one bounded structural repair. Every
+record produces one JSONL result with findings, confidence, citations and unresolved
+issues. **No-key mode currently abstains on all notes**; it preserves input rather
+than claiming clinical interpretation. Runtime needs no embedding downloads.
 
-Use Python 3.9+:
+```sh
+docker compose up --build
+# Pipeable JSONL; ./input is mounted read-only at /in:
+mkdir -p out
+docker compose run --rm app --input /in/example.jsonl > out/result.jsonl
+# Put your own file in ./input, then use --input /in/custom.jsonl.
+```
+
+Compose does not load a key into the container; its default runs
+`examples/messy_note.txt` and exits. `compose up` displays Compose log prefixes;
+use `compose run` for machine-readable output. Build requires internet for the
+base image and pinned Python packages. Docker execution has not been verified in
+the current development environment because Docker is unavailable.
+
+Local alternative (Python 3.9+):
 
 ```sh
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-python -m app.main --help
-python -m app.main --check-data
-python -m app.main --self-check
-mkdir -p out
-python -m app.main --input examples/messy_note.txt --output out/messy_note.jsonl
-python -m app.guidelines
+python -m app.main --input examples/messy_note.txt --no-model
+python -m app.main --input input/example.jsonl --output out/local-result.jsonl --no-model
 python -m pytest -q
 ```
 
-The self-check needs no API key and emits one synthetic unresolved JSONL result.
-The self-check does not process clinical notes. Implemented file formats and accounting rules
-are in [docs/input_output_contract.md](docs/input_output_contract.md).
-The supplied 404 catalogue records and 45 raw guidelines remain unchanged;
-their contents are untrusted data. External proposals are isolated and excluded pending source/reuse review.
-Guideline drafts cover every snippet and remain **uncertain** pending independent
-human review. See [the review workflow](docs/guideline_review.md) for source
-quotes/hashes, three-valued evaluation, proposed relationships and trust warnings.
+`requirements-lock.txt` pins the tested dependency versions used by Docker.
+The optional model reads environment variables described in
+[model configuration](docs/model_reasoning.md); copying `.env.example` alone does
+not load variables. No credentials are required for offline processing.
 
-Built with Codex. Clinical evaluation and live model testing have not occurred.
-An initial trust-screening change missed `AI INSTRUCTION`; a failing non-clinical
-regression test exposed it, and the generic marker rule was corrected.
-The [evaluation harness](docs/evaluation.md) awaits human approval of fixtures;
-the live runner currently skips without making model calls.
-See [model configuration and limits](docs/model_reasoning.md) for environment
-settings, prompt accounting, trust boundaries and opt-in live evaluation.
-Milestone 3 clinical approval is **deferred**, not passed; labels and guideline
-drafts remain unapproved. See [milestone status](docs/milestone_status.md) and
-[the Milestone 4 report](docs/milestone4_report.md) for the actual vitiligo retrieval
-hits and refusal rationale. At 50,000 codes, full catalogue context would require
-hierarchical retrieval and indexed guideline applicability; this is a small-corpus
-prototype. The [external review packet](docs/expansion_review.md) documents the necrotising-infection gap, WHO source observations and supplied-code conflicts; no external entry is independently approved.
-Later milestones remain subject to human review; Codex does not commit.
+The unchanged 404 codes and 45 guidelines are untrusted evidence, not instructions.
+GDL-016 narrows GDL-017's pneumonia confirmation standard; GDL-045 preserves older,
+conflicting guidance. Stage 2 reviews the complete raw corpus and refuses unknown
+applicability; source quotations cannot prove its interpretation. GDL-041 contains
+an assistant-directed coding override: quarantine it while retaining benign text
+and warnings. All **50 derived drafts remain unverified**; no human-verified hard
+gates are claimed. Embeddings, LangGraph and OCR were left out to keep the text
+pipeline small and avoid additional downloads and orchestration.
+
+[External proposals](docs/expansion_review.md) cover the necrotising-infection gap:
+[WHO's reference guide](https://icdcdn.who.int/icd11referenceguide/en/refguide.pdf)
+and [skin referral material](https://cdn.who.int/media/docs/default-source/ntds/skin-ntds/common-skin-diseases-for-managemen-or-referral-at-primary-health-care-level.pdf).
+Both proposals remain pending source/reuse review and excluded from retrieval;
+no approved external additions exist. Reviewed expanded-only codes would remain
+unresolved candidates, never supplied-origin assignments. The source audit also
+records conflicts with supplied CA22/CA40 titles; originals are not rewritten.
+
+Accounting, provenance and quote checks generalize across notes; lexical recall,
+model clinical interpretation and the narrow explicit-field offline extraction
+have no demonstrated clinical accuracy. Ten independent fixtures remain pending;
+Milestone 3 approval is **deferred**, not passed. Next day: complete independent
+clinical/source reviews, evaluate approved held-out fixtures and validate Docker.
+At 50,000 codes, replace full-corpus prompting with hierarchical chapter/code
+retrieval, candidate-recall checks and indexed guideline applicability.
+
+Built with Codex. An actual trust-screening change missed `AI INSTRUCTION`; a
+non-clinical regression test exposed it and the generic marker rule was corrected.
+See [validation and remaining requirements](docs/reproducibility.md). The human
+reviews and commits milestones; no automatic commits or evaluator messages.

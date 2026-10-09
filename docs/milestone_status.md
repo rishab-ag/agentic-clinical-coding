@@ -24,3 +24,9 @@ Milestone 7 infrastructure and primary-source review packet implemented. Externa
 source/permission approval remains outstanding; both proposals are pending and
 excluded from runtime retrieval. The external expansion gate has not passed.
 Milestone 8 is not implemented.
+
+Milestone 8: container packaging, pinned requirements, concise README and local
+reproducibility checks implemented. Docker execution is unvalidated because the
+Docker executable is unavailable. The final reproducibility gate is not passed.
+Fresh exported-tree installation and no-key processing passed; this is not a
+Docker or committed clean-clone verification. Prior review gates remain open.

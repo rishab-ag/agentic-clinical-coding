@@ -1,0 +1,9 @@
+services:
+  app:
+    build: .
+    command: ["--input", "examples/messy_note.txt"]
+    volumes:
+      - ./input:/in:ro
+    stdin_open: false
+    tty: false
+    restart: "no"
