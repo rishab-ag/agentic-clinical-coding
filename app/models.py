@@ -108,6 +108,8 @@ class Provenance(Contract):
 class CodingResult(Contract):
     note_id: str = Field(min_length=1)
     original_note: str
+    original_record: Any = None
+    input_position: Optional[int] = Field(default=None, ge=1)
     status: Literal["coded", "provisional", "unresolved"]
     assignments: List[Assignment] = Field(default_factory=list)
     findings: List[Finding] = Field(default_factory=list)
@@ -118,6 +120,10 @@ class CodingResult(Contract):
     warnings: List[str] = Field(default_factory=list)
     confidence: Confidence
     provenance: Provenance
+    facts: List[ClinicalFact] = Field(default_factory=list)
+    retrieved_evidence: List["RetrievedContext"] = Field(default_factory=list)
+    quarantined_note_evidence: List[Evidence] = Field(default_factory=list)
+    guideline_checks: List["GuidelineCheck"] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def consistent_status(self):
@@ -126,3 +132,24 @@ class CodingResult(Contract):
         if self.status != expected:
             raise ValueError("Status must reflect assignment certainty")
         return self
+
+
+class RetrievedContext(Contract):
+    source_type: Literal["catalogue", "guideline"]
+    source_id: str
+    title: str
+    retrieval_score: float = Field(ge=0)
+    source_quote: str
+    raw_text: str
+    source_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    warnings: List[str] = Field(default_factory=list)
+
+
+class GuidelineCheck(Contract):
+    source_id: str
+    record_id: str
+    verification_status: Literal["verified", "uncertain", "rejected"]
+    outcomes: Dict[str, Literal["met", "not_met", "unknown"]]
+
+
+CodingResult.model_rebuild()

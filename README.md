@@ -1,8 +1,8 @@
 # Agentic clinical coding
 
-Milestones 1–3 scaffolding: Python CLI, Pydantic contracts, immutable supplied
-corpus loaders, guideline review, and evaluation runners. No retrieval,
-clinical coding, or model calls yet.
+Milestones 1–4: Python CLI, Pydantic contracts, immutable supplied corpus loaders,
+guideline review, evaluation infrastructure, ingestion and BM25 retrieval.
+The offline pipeline currently returns unresolved results; no model calls occur.
 
 Use Python 3.9+:
 
@@ -13,12 +13,14 @@ python -m pip install -r requirements.txt
 python -m app.main --help
 python -m app.main --check-data
 python -m app.main --self-check
+mkdir -p out
+python -m app.main --input examples/messy_note.txt --output out/messy_note.jsonl
 python -m app.guidelines
 python -m pytest -q
 ```
 
 The self-check needs no API key and emits one synthetic unresolved JSONL result.
-It does not process clinical notes. Planned file formats and accounting rules
+The self-check does not process clinical notes. Implemented file formats and accounting rules
 are in [docs/input_output_contract.md](docs/input_output_contract.md).
 The supplied 404 catalogue records and 45 raw guidelines remain unchanged;
 their contents are untrusted data. No external additions have been made.
@@ -27,6 +29,14 @@ human review. See [the review workflow](docs/guideline_review.md) for source
 quotes/hashes, three-valued evaluation, proposed relationships and trust warnings.
 
 Built with Codex. Clinical evaluation and live model testing have not occurred.
+An initial trust-screening change missed `AI INSTRUCTION`; a failing non-clinical
+regression test exposed it, and the generic marker rule was corrected.
 The [evaluation harness](docs/evaluation.md) awaits human approval of fixtures;
 the live runner currently skips without making model calls.
+Milestone 3 clinical approval is **deferred**, not passed; labels and guideline
+drafts remain unapproved. See [milestone status](docs/milestone_status.md) and
+[the Milestone 4 report](docs/milestone4_report.md) for the actual vitiligo retrieval
+hits and refusal rationale. At 50,000 codes, full catalogue context would require
+hierarchical retrieval and indexed guideline applicability; this is a small-corpus
+prototype. No external data expansion has been performed yet.
 Later milestones remain subject to human review; Codex does not commit.

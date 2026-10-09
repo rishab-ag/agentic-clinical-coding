@@ -32,9 +32,9 @@ class TrustScan(Contract):
 
 _DIRECTIVE = re.compile(
     r"\b(?:assistant|chatgpt|language model|processing agent)\b|"
-    r"\b(?:system|developer)\s+(?:directive|message|instruction|override)\b|"
+    r"\b(?:system|developer|ai)\s+(?:directive|message|instruction|override)\b|"
     r"\b(?:ignore|disregard|override)\b[^.!?\n]{0,100}\b(?:instructions|guidance|rules|system|prompt)\b|"
-    r"\b(?:omit|hide|suppress)\b[^.!?\n]{0,80}\b(?:evidence|warnings|output)\b|"
+    r"\b(?:omit|hide|suppress|remove)\b[^.!?\n]{0,80}\b(?:evidence|warnings|output|citations)\b|"
     r"\b(?:return|output|assign)\s+(?:the\s+)?code\b[^.!?\n]{0,80}\b(?:confidence|regardless)\b",
     re.IGNORECASE,
 )
