@@ -1,7 +1,8 @@
 # Agentic clinical coding
 
-Milestone 1 only: Python CLI scaffold, Pydantic contracts, and immutable supplied
-corpus loaders. No retrieval, clinical decisions, or model calls yet.
+Milestones 1–2: Python CLI scaffold, Pydantic contracts, immutable supplied corpus
+loaders, and an offline guideline review workflow. No retrieval, clinical coding,
+or model calls yet.
 
 Use Python 3.9+:
 
@@ -12,6 +13,7 @@ python -m pip install -r requirements.txt
 python -m app.main --help
 python -m app.main --check-data
 python -m app.main --self-check
+python -m app.guidelines
 python -m pytest -q
 ```
 
@@ -20,6 +22,9 @@ It does not process clinical notes. Planned file formats and accounting rules
 are in [docs/input_output_contract.md](docs/input_output_contract.md).
 The supplied 404 catalogue records and 45 raw guidelines remain unchanged;
 their contents are untrusted data. No external additions have been made.
+Guideline drafts cover every snippet and remain **uncertain** pending independent
+human review. See [the review workflow](docs/guideline_review.md) for source
+quotes/hashes, three-valued evaluation, proposed relationships and trust warnings.
 
 Built with Codex. Clinical evaluation and live model testing have not occurred.
 Later milestones remain subject to human review; Codex does not commit.
