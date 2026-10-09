@@ -1,0 +1,5 @@
+SYNTHETIC EXAMPLE — no real patient; no evaluation labels.
+OPD / presenting: cough x 3 days, ?fever. SOB denied.
+PMH copied forward: diabetes; type not recorded here.
+Exam: template says chest clear; handwritten addendum says ?crackles.
+Tests: requested, results not documented. Assessment: needs review.
