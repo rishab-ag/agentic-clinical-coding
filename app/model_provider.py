@@ -20,6 +20,13 @@ class ContextOverflow(ModelFailure):
     pass
 
 
+class MalformedOutput(ModelFailure):
+    """Untrusted output retained solely for bounded structural repair."""
+    def __init__(self, text, retries, latency_ms, input_tokens):
+        super().__init__("Malformed model JSON", retries, latency_ms, input_tokens)
+        self.payload=text
+
+
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self,request,fp,code,msg,headers,newurl):
         return None
@@ -54,6 +61,7 @@ class ClinicalModel(Protocol):
     config: ModelConfig
     def extract(self, messages, schema) -> ModelReply: ...
     def decide(self, messages, schema) -> ModelReply: ...
+    def repair(self, messages, schema) -> ModelReply: ...
 
 
 def strict_schema(model):
@@ -95,6 +103,12 @@ class OpenAIModel:
     def decide(self, messages, schema):
         return self._call(messages, schema, "clinical_decision")
 
+    def repair(self, messages, schema):
+        # Repair has no transport retries: exactly one bounded request.
+        from dataclasses import replace
+        return OpenAIModel(replace(self.config, retries=0), self.transport, self.sleep)._call(
+            messages, schema, "clinical_decision")
+
     def _call(self, messages, schema, name):
         if prompt_upper_bound(self.config,messages,schema,name) + self.config.max_output_tokens > self.config.context_limit:
             raise ContextOverflow("Full context does not fit configured limit")
@@ -124,7 +138,10 @@ class OpenAIModel:
                 if type(tokens) is not int or tokens < 0 or not texts:
                     raise failure("Missing output or token usage")
                 # Schema parsing is local; malformed output is not retried into certainty.
-                payload = _json("".join(texts))
+                try:
+                    payload = _json("".join(texts))
+                except ValueError:
+                    raise MalformedOutput("".join(texts),attempt,(time.monotonic()-started)*1000,tokens) from None
                 return ModelReply(payload,tokens,attempt,(time.monotonic()-started)*1000)
             except HTTPError as error:
                 retryable = error.code in (408,409,429) or 500 <= error.code <= 599

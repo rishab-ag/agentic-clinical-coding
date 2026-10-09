@@ -12,7 +12,9 @@
 - Milestone 5: authorized optional two-stage model adapter and grounding checks.
   No-key processing remains available. Live inference/clinical quality remain
   untested without credentials and independently approved fixtures.
-- Milestone 6: not implemented or authorized; no model-output repair loop.
+- Milestone 6: authorized reconciliation and evidence validation implemented,
+  with one conservative decision-output repair. Structural checks do not satisfy
+  the deferred clinical gate. See `docs/reconciliation.md`.
 
 Outstanding: independent fixture approval, explicit executable expectations for
 ambiguous prose, human guideline interpretation review, and clinical evaluation.

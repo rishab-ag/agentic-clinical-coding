@@ -117,3 +117,5 @@ They use non-clinical sentinels and prove software plumbing only. No extra provi
 or SDK version compatibility, live API success, model quality, billing/cost, or
 clinical correctness is asserted. API/model access, network availability and
 human review remain external requirements.
+
+Milestone 6 supersedes the earlier zero-repair limitation: see [reconciliation](reconciliation.md) for the single bounded structural repair and its restrictions.

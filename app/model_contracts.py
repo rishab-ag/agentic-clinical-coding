@@ -1,7 +1,7 @@
 """Model wire contracts exclude application-owned input, hashes and status."""
 from typing import List, Literal, Optional, Union
 import math
-from pydantic import model_validator
+from pydantic import model_validator, Field
 
 from app.models import (Assignment, Candidate, Confidence, Contract, DifferentialHypothesis,
                         Evidence)
@@ -45,7 +45,7 @@ class ExtractedFindings(Contract):
 class FindingDisposition(Contract):
     finding_id: str
     disposition: Literal["coded", "subsumed", "recorded_not_encounter", "unresolved"]
-    reason: str
+    reason: str = Field(min_length=1, pattern=r"\S")
     assignment_code: Optional[str]
 
 

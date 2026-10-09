@@ -110,6 +110,7 @@ class Provenance(Contract):
     stage_prompt_tokens: Dict[str, int] = Field(default_factory=dict)
     stage_prompt_upper_bounds: Dict[str, int] = Field(default_factory=dict)
     model_retries: int = Field(default=0, ge=0)
+    model_repairs: int = Field(default=0, ge=0, le=1)
     model_latency_ms: float = Field(default=0, ge=0)
 
 
