@@ -7,12 +7,14 @@ from app.data import DATA_DIR, load_supplied_data
 from app.models import CodingResult, Confidence, Provenance
 from app.ingestion import read_records
 from app.pipeline import NoKeyPipeline
+from app.model_provider import model_from_environment
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Clinical coding prototype (conservative offline pipeline)")
     parser.add_argument("--input", type=Path, help="Arbitrary TXT, JSON or JSONL note file")
     parser.add_argument("--output", type=Path, help="Also write the same JSONL to this path")
+    parser.add_argument("--no-model", action="store_true", help="Force offline mode even when credentials exist")
     parser.add_argument("--check-data", action="store_true", help="Validate supplied corpus and print counts/hashes to stderr")
     parser.add_argument("--self-check", action="store_true", help="Emit one synthetic unresolved bootstrap result as JSONL")
     parser.add_argument("--data-dir", type=Path, default=DATA_DIR, help="Supplied reference-data directory")
@@ -41,6 +43,14 @@ def main(argv=None):
             return 1
         records = read_records(args.input)
         pipeline = NoKeyPipeline(data)
+        if not args.no_model:
+            try:
+                model = model_from_environment()
+                if model:
+                    from app.reasoning import ModelPipeline
+                    pipeline = ModelPipeline(data,model)
+            except (ValueError, TypeError):
+                print("Invalid model configuration; using conservative offline mode", file=sys.stderr)
         output = None
         try:
             if args.output:

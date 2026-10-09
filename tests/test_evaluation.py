@@ -239,10 +239,12 @@ def test_approved_scoring_requires_results_and_validation_is_unscored(tmp_path,d
     assert report["clinical_scoring"] is False
 
 
-@pytest.mark.parametrize("opt_in,key,reason", [(False,None,"disabled"),(True,None,"absent"),(True,"NONSECRET_DUMMY_KEY","not implemented")])
+@pytest.mark.parametrize("opt_in,key,reason", [(False,None,"disabled"),(True,None,"absent"),(True,"NONSECRET_DUMMY_KEY","not configured")])
 def test_live_stub_skips_honestly_without_calls(opt_in,key,reason):
     env = dict(os.environ)
     env.pop("OPENAI_API_KEY",None)
+    env.pop("OPENAI_MODEL",None)
+    env.pop("OPENAI_CONTEXT_LIMIT",None)
     if key: env["OPENAI_API_KEY"] = key
     args = [sys.executable,"-m","app.live_eval"] + (["--live"] if opt_in else [])
     result = subprocess.run(args,capture_output=True,text=True,env=env)

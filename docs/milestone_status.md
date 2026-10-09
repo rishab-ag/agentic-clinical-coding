@@ -9,7 +9,10 @@
   unverified. No independent applicability approval is inferred.
 - Milestone 4: ingestion, BM25 retrieval and conservative no-key processing.
   All decisions abstain while safe authorization cannot be established.
-- Milestone 5: not implemented or authorized.
+- Milestone 5: authorized optional two-stage model adapter and grounding checks.
+  No-key processing remains available. Live inference/clinical quality remain
+  untested without credentials and independently approved fixtures.
+- Milestone 6: not implemented or authorized; no model-output repair loop.
 
 Outstanding: independent fixture approval, explicit executable expectations for
 ambiguous prose, human guideline interpretation review, and clinical evaluation.

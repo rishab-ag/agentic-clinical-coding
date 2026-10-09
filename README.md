@@ -1,8 +1,9 @@
 # Agentic clinical coding
 
-Milestones 1–4: Python CLI, Pydantic contracts, immutable supplied corpus loaders,
-guideline review, evaluation infrastructure, ingestion and BM25 retrieval.
-The offline pipeline currently returns unresolved results; no model calls occur.
+Milestones 1–5: Python CLI, Pydantic contracts, immutable supplied corpus loaders,
+guideline review, ingestion, BM25 and an optional two-stage OpenAI adapter.
+Without credentials the pipeline returns unresolved results. With a configured
+model/context limit it validates model proposals against original-note evidence.
 
 Use Python 3.9+:
 
@@ -33,6 +34,8 @@ An initial trust-screening change missed `AI INSTRUCTION`; a failing non-clinica
 regression test exposed it, and the generic marker rule was corrected.
 The [evaluation harness](docs/evaluation.md) awaits human approval of fixtures;
 the live runner currently skips without making model calls.
+See [model configuration and limits](docs/model_reasoning.md) for environment
+settings, prompt accounting, trust boundaries and opt-in live evaluation.
 Milestone 3 clinical approval is **deferred**, not passed; labels and guideline
 drafts remain unapproved. See [milestone status](docs/milestone_status.md) and
 [the Milestone 4 report](docs/milestone4_report.md) for the actual vitiligo retrieval

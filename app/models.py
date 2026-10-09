@@ -55,6 +55,8 @@ class Finding(Contract):
     evidence: Evidence
     assertion: Literal["confirmed", "suspected", "negated", "historical", "patient_reported", "unclear"]
     encounter_relevant: Optional[bool] = None
+    temporality: Literal["current", "historical", "unknown"] = "unknown"
+    experiencer: Literal["patient", "other", "unknown"] = "unknown"
     attributes: Dict[str, ClinicalFact] = Field(default_factory=dict)
     disposition: Literal["coded", "subsumed", "recorded_not_encounter", "unresolved"]
     reason: str = Field(min_length=1)
@@ -92,6 +94,7 @@ class Assignment(Contract):
     certainty: Literal["definitive", "provisional"]
     confidence: Confidence
     guideline_ids: List[str] = Field(default_factory=list)
+    provisional_permission: Optional[Evidence] = None
 
 
 class Provenance(Contract):
@@ -103,6 +106,11 @@ class Provenance(Contract):
     model: Optional[str] = None
     prompt_version: Optional[str] = None
     prompt_token_count: Optional[int] = Field(default=None, ge=0)
+    prompt_token_count_method: Optional[Literal["api_usage", "utf8_upper_bound"]] = None
+    stage_prompt_tokens: Dict[str, int] = Field(default_factory=dict)
+    stage_prompt_upper_bounds: Dict[str, int] = Field(default_factory=dict)
+    model_retries: int = Field(default=0, ge=0)
+    model_latency_ms: float = Field(default=0, ge=0)
 
 
 class CodingResult(Contract):
