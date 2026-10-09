@@ -1,0 +1,75 @@
+{
+  "schema_version": "external-proposals-v1",
+  "entries": [
+    {
+      "entry_id": "EXT-ICD-NF",
+      "kind": "catalogue",
+      "catalogue_origin": "expanded",
+      "code": "1B71",
+      "title": "Necrotising fasciitis",
+      "chapter": null,
+      "synonyms": [],
+      "text": null,
+      "icd_uri": null,
+      "source": {
+        "url": "https://icdcdn.who.int/icd11referenceguide/en/refguide.pdf",
+        "publisher": "World Health Organization",
+        "accessed_date": "2026-10-10",
+        "version": "Reference Guide copyright 2022; live PDF accessed 2026-10-10; specific MMS release not established",
+        "locator": "PDF page 342 (zero-based 341), printed page 340",
+        "fragment": "1B71 Necrotising fasciitis",
+        "fragment_sha256": "f86409dd258ae9c3aa31937f35b698ad3d02a3f97382aefc30c88d16d07ee8cb",
+        "license_url": "https://icd.who.int/en/docs/ICD11-license.pdf",
+        "attribution_note": "World Health Organization; source content reproduced verbatim as a short review fragment. No WHO endorsement. Runtime reuse is pending independent permission review.",
+        "fetched_facts": [
+          "The fetched WHO reference guide displays this code/title pair."
+        ],
+        "unverified_facts": [
+          "Current release-specific mapping, hierarchy, chapter and WHO entity URI require review.",
+          "Software reuse permission and human source approval remain outstanding."
+        ]
+      },
+      "reason": "GDL-032 describes a necrotising process absent from supplied catalogue titles; proposal only, not a coding rule.",
+      "linked_supplied_guideline_ids": [
+        "GDL-032"
+      ],
+      "review_status": "pending_human_review",
+      "review": null
+    },
+    {
+      "entry_id": "EXT-GUIDE-SKIN-REFERRAL",
+      "kind": "guideline",
+      "catalogue_origin": "expanded",
+      "code": null,
+      "title": "WHO skin disease classification: urgent referral excerpt",
+      "chapter": null,
+      "synonyms": [],
+      "text": "Severe pain disproportionate to clinical findings.",
+      "icd_uri": null,
+      "source": {
+        "url": "https://cdn.who.int/media/docs/default-source/ntds/skin-ntds/common-skin-diseases-for-managemen-or-referral-at-primary-health-care-level.pdf",
+        "publisher": "World Health Organization",
+        "accessed_date": "2026-10-10",
+        "version": "Undated PDF as fetched 2026-10-10; publication/effective date not established",
+        "locator": "PDF page 12 (zero-based 11), necrotising fasciitis row",
+        "fragment": "Severe pain disproportionate to clinical findings.",
+        "fragment_sha256": "03e77303af8e8a2f93d6e284e0087d0cf6022e644ec4258f27ce34d1395bad7e",
+        "license_url": null,
+        "attribution_note": "World Health Organization; source content reproduced verbatim as a short review fragment. No WHO endorsement. Runtime reuse is pending independent permission review.",
+        "fetched_facts": [
+          "WHO table lists this feature in its necrotising fasciitis urgent-referral row.",
+          "The row calls for hospital transfer and surgical assessment."
+        ],
+        "unverified_facts": [
+          "Exact effective date, reuse permission and independent clinical applicability review remain outstanding."
+        ]
+      },
+      "reason": "Adds external source context for GDL-032 urgency gap; excerpt is insufficient alone for diagnosis or assignment.",
+      "linked_supplied_guideline_ids": [
+        "GDL-032"
+      ],
+      "review_status": "pending_human_review",
+      "review": null
+    }
+  ]
+}

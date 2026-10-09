@@ -102,6 +102,7 @@ class Provenance(Contract):
     catalogue_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     guidelines_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     constraints_sha256: Optional[str] = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    expansion_sha256: Optional[str] = Field(default=None, pattern=r"^[0-9a-f]{64}$")
     provider: Optional[str] = None
     model: Optional[str] = None
     prompt_version: Optional[str] = None

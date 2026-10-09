@@ -49,7 +49,8 @@ and differential hypotheses cannot authorize definitive assignments. Provisional
 assignments need an exact applicable raw-guideline permission quote and all their
 own requirements met; low confidence alone is not permission. Keep expanded-only
 matches unresolved as candidates with provenance/warnings. Expanded entries are
-currently empty. Each extracted finding gets exactly one disposition and reason;
+source-reviewed only; review every supplied and expanded guideline ID. Source
+review alone does not establish clinical applicability. Each extracted finding gets exactly one disposition and reason;
 do not add findings or alter Stage 1 assertions. Keep unresolved secondary findings,
 missing discriminators, safety flags and confidence increase/decrease reasons.
 Application derives note status and owns note IDs, provenance and original text.""",
@@ -61,4 +62,6 @@ Application derives note status and owns note IDs, provenance and original text.
              verified_constraints=constraints,
              advisory_relations=[] if pipeline.cache is None else [dict(source_id=r.source.source_id,relation=rel.model_dump()) for r in pipeline.cache.records for rel in r.relations],
              uncertain_constraint_count=0 if pipeline.cache is None else sum(r.verification_status=="uncertain" for r in pipeline.cache.records),
-             expanded_catalogue=[],expanded_guidelines=[]))
+             expanded_catalogue=[e.model_dump() for e in pipeline.expanded_catalogue.values()],
+             expanded_guidelines=[dict(**e.model_dump(),trust_scan=scan_untrusted_text(e.text).model_dump())
+                                  for e in pipeline.expanded_guidelines.values()]))

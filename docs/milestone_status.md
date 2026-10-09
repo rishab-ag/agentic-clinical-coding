@@ -19,3 +19,8 @@
 Outstanding: independent fixture approval, explicit executable expectations for
 ambiguous prose, human guideline interpretation review, and clinical evaluation.
 Software checks and smoke tests are not evidence of clinical accuracy.
+
+Milestone 7 infrastructure and primary-source review packet implemented. External
+source/permission approval remains outstanding; both proposals are pending and
+excluded from runtime retrieval. The external expansion gate has not passed.
+Milestone 8 is not implemented.

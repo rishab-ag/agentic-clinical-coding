@@ -21,7 +21,7 @@ def normalize(text):
 
 
 class NoKeyPipeline:
-    def __init__(self, data, cache_path: Path = DEFAULT_CACHE):
+    def __init__(self, data, cache_path: Path = DEFAULT_CACHE, expansion_path=None):
         self.data = data
         self.catalogue = {entry.code: entry for entry in data.catalogue}
         self.guidelines = {entry.id: entry for entry in data.guidelines}
@@ -39,10 +39,26 @@ class NoKeyPipeline:
             self.cache_hash = hashlib.sha256(cache_path.read_bytes()).hexdigest()
         except (OSError, ValueError):
             self.cache_warning = "Constraint cache missing, invalid or stale; using raw guidance and refusing assignments"
+        from app.expansion import DEFAULT_MANIFEST, load_expansion
+        self.expanded_catalogue, self.expanded_guidelines = {}, {}
+        self.expansion_hash, self.expansion_warning = None, None
+        try:
+            manifest, self.expansion_hash = load_expansion(data, expansion_path or DEFAULT_MANIFEST)
+            active=[e for e in manifest.entries if e.review_status=="human_approved"]
+            self.expanded_catalogue={e.code:e for e in active if e.kind=="catalogue"}
+            self.expanded_guidelines={e.entry_id:e for e in active if e.kind=="guideline"}
+            pending=sum(e.review_status=="pending_human_review" for e in manifest.entries)
+            if pending: self.expansion_warning=f"{pending} external proposals pending independent review; excluded from retrieval"
+        except (OSError, ValueError):
+            self.expansion_warning="External manifest unavailable/invalid; external data excluded"
+        self.expanded_index=BM25([SearchDocument(source_id=e.code,
+            text=scan_untrusted_text(" ".join([e.title,e.chapter]+e.synonyms)).retained_text)
+            for e in self.expanded_catalogue.values()])
 
     def provenance(self):
         return Provenance(mode="deterministic", catalogue_sha256=self.data.catalogue_sha256,
-                          guidelines_sha256=self.data.guidelines_sha256, constraints_sha256=self.cache_hash)
+                          guidelines_sha256=self.data.guidelines_sha256, constraints_sha256=self.cache_hash,
+                          expansion_sha256=self.expansion_hash)
 
     def extract(self, record):
         scan = scan_untrusted_text(record.note.text)
@@ -98,10 +114,30 @@ class NoKeyPipeline:
             confidence=Confidence(level="low",increase_if=["Independent review establishes applicable guidance and all required evidence"],
                                   decrease_if=["Contradictory findings, missing prerequisites, untrusted source instructions"]),
             provenance=self.provenance())
+        if self.expansion_warning: result.warnings.append(self.expansion_warning)
         if record.errors:
             return result
         try:
             safe_note = scan.retained_text
+            for code,score in self.expanded_index.search(safe_note,limit=5):
+                entry=self.expanded_catalogue[code]
+                result.candidates_considered.append(Candidate(code=code,title=entry.title,catalogue_origin="expanded",
+                    retrieval_score=score,source=entry.source.url,status="unresolved",
+                    reason="Independently source-reviewed external lexical candidate; outside supplied assignment set",
+                    missing_discriminators=["Not eligible for supplied-origin assignment","Clinical applicability and original-note confirmation"]))
+                result.warnings.append(f"Expanded-only candidate {code}: outside supplied catalogue; source {entry.source.url}")
+                result.retrieved_evidence.append(RetrievedContext(source_type="catalogue",source_id=code,title=entry.title,
+                    retrieval_score=score,source_quote=entry.title,raw_text=entry.source.fragment,
+                    source_sha256=entry.source.fragment_sha256,warnings=[
+                        f"Expanded origin; source {entry.source.url}; version {entry.source.version}; URI {entry.icd_uri}",
+                        "Fragment hash covers stored text only; source review does not authorize clinical assignment"]))
+            for entry in self.expanded_guidelines.values():
+                source_scan=scan_untrusted_text(entry.text)
+                result.retrieved_evidence.append(RetrievedContext(source_type="guideline",source_id=entry.entry_id,
+                    title=entry.title,retrieval_score=0,source_quote=source_scan.retained_text,raw_text=entry.text,
+                    source_sha256=entry.source.fragment_sha256,warnings=source_scan.warnings+
+                    [f"External source-reviewed excerpt; applicability unestablished; source {entry.source.url}"]))
+                result.warnings.extend(source_scan.warnings)
             catalogue_hits = self.catalogue_index.search(safe_note, limit=5)
             query = safe_note + " " + " ".join(exact_titles or [self.catalogue[code].title for code, _ in catalogue_hits])
             guideline_hits = self.guideline_index.search(query, limit=7)

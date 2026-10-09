@@ -40,15 +40,16 @@ def source_evidence(evidence, offline, note):
     if evidence.source_type=="note":
         return note_evidence(evidence,note)
     if evidence.source_type=="guideline":
-        source=offline.guidelines.get(evidence.source_id)
+        source=offline.guidelines.get(evidence.source_id) or offline.expanded_guidelines.get(evidence.source_id)
+        scan=scan_untrusted_text(source.text) if source else None
         if not source or not any(normalize(evidence.source_quote) in normalize(s.text)
-            for s in offline.guideline_scans[source.id].segments if s.disposition=="retained"):
+            for s in scan.segments if s.disposition=="retained"):
             raise ValueError("Guideline citation/quote not grounded")
         if evidence.start is not None:
             if evidence.end > len(source.text) or normalize(source.text[evidence.start:evidence.end]) != normalize(evidence.source_quote):
                 raise ValueError("Guideline quote offsets invalid")
             if not any(s.disposition=="retained" and s.start <= evidence.start < evidence.end <= s.end
-                       for s in offline.guideline_scans[source.id].segments):
+                       for s in scan.segments):
                 raise ValueError("Guideline span overlaps quarantined text")
     else:
         source=offline.catalogue.get(evidence.source_id)
@@ -62,8 +63,8 @@ def source_evidence(evidence, offline, note):
 
 
 class ModelPipeline:
-    def __init__(self,data,model):
-        self.offline=NoKeyPipeline(data)
+    def __init__(self,data,model,expansion_path=None):
+        self.offline=NoKeyPipeline(data,expansion_path=expansion_path)
         self.model=model
 
     def run(self,records):
@@ -154,6 +155,8 @@ class ModelPipeline:
                 "provisional" if any(a.certainty=="provisional" for a in result.assignments) else "coded")
             result.candidates_considered=list({(c.catalogue_origin,c.code):c for c in
                 result.candidates_considered+proposal.candidates_considered}.values())
+            result.warnings.extend(f"Expanded-only candidate {c.code}: outside supplied catalogue; source {c.source}"
+                                   for c in result.candidates_considered if c.catalogue_origin=="expanded")
             result.safety_flags=list(dict.fromkeys(result.safety_flags+proposal.safety_flags))
             result.warnings=list(dict.fromkeys(result.warnings+proposal.warnings+
                 [f"{g.id}: {w}" for g in self.offline.data.guidelines for w in self.offline.guideline_scans[g.id].warnings]))
@@ -169,9 +172,16 @@ class ModelPipeline:
                     if candidate.catalogue_origin=="expanded":
                         candidate=candidate.model_copy(deep=True)
                         candidate.status="unresolved"
-                        candidate.reason="Unverified model-proposed expanded candidate; not eligible for assignment"
+                        entry=self.offline.expanded_catalogue.get(candidate.code)
+                        if entry:
+                            candidate.title=entry.title
+                            candidate.source=entry.source.url
+                            candidate.reason="Source-reviewed external candidate; clinical assignment validation failed"
+                        else:
+                            candidate.reason="Unverified model-proposed expanded candidate; not eligible for assignment"
                         result.candidates_considered.append(candidate)
-                        result.warnings.append("Expanded candidate provenance unverified; source is a model claim, not verification")
+                        result.warnings.append("Expanded-only candidate retained unresolved; source reviewed" if entry else
+                                               "Expanded candidate provenance unverified; source is a model claim, not verification")
             result.assignments=[]
             result.status="unresolved"
             result.confidence=baseline.confidence
@@ -264,7 +274,7 @@ class ModelPipeline:
             elif disposition.assignment_code is not None:
                 raise ValueError("Non-coded disposition cannot claim assignment")
         reviews={g.source_id:g for g in proposal.guideline_review}
-        if len(reviews)!=len(proposal.guideline_review) or set(reviews)!=set(self.offline.guidelines):
+        if len(reviews)!=len(proposal.guideline_review) or set(reviews)!=set(self.offline.guidelines)|set(self.offline.expanded_guidelines):
             raise ValueError("All supplied guidelines require review")
         for review in reviews.values():
             for requirement in review.requirements:
@@ -276,6 +286,13 @@ class ModelPipeline:
                 if requirement.outcome=="met" and not requirement.evidence:
                     raise ValueError("Met requirements need original-note evidence")
         for candidate in proposal.candidates_considered:
+            if candidate.catalogue_origin=="expanded":
+                entry=self.offline.expanded_catalogue.get(candidate.code)
+                if not entry or candidate.title!=entry.title or candidate.status!="unresolved":
+                    raise ValueError("Expanded candidate lacks independent source review or unresolved status")
+                candidate.source=entry.source.url
+                candidate.reason="Source-reviewed external candidate; outside supplied assignment catalogue"
+                continue
             entry=self.offline.catalogue.get(candidate.code)
             if candidate.catalogue_origin!="supplied" or not entry or candidate.title!=entry.title:
                 raise ValueError("Candidate outside loaded supplied catalogue")

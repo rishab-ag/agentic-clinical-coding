@@ -38,6 +38,10 @@ def main(argv=None):
         root = Path(__file__).resolve().parent.parent
         protected.update((root / name).resolve() for name in ("data/derived/guideline_constraints.json",
                           "tests/fixtures/clinical_eval.jsonl", "docs/clinical_fixture_review.md"))
+        if args.output and (args.output.resolve().is_relative_to(root / "data/expanded") or
+                            args.output.resolve().is_relative_to(args.data_dir.resolve() / "expanded")):
+            print("Output must not overwrite external source/review records",file=sys.stderr)
+            return 1
         if args.output and args.output.resolve() in protected:
             print("Output must not overwrite input or supplied reference files", file=sys.stderr)
             return 1
