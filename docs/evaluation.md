@@ -71,6 +71,34 @@ but cannot be scored after approval until the human converts it to explicit
 machine-checkable expectations. The runner does not invent a clinical meaning
 for conditional prose or silently ignore it.
 
+Executable conditions also accept `when` (an output predicate) and `checks`
+(a nonempty list). Predicates use actual output paths, `operator` and `value`.
+Supported operators: `eq`, `ne`, `in`, `not_in`, `contains`, `exists`, `absent`,
+and array `any`/`all`/`none` with an `item` predicate relative to each element.
+`all_of`/`any_of` combine nonempty predicate lists. Missing comparison paths or
+incompatible values return unknown; an unknown conditional trigger/check fails
+evaluation rather than silently skipping an obligation. Empty `all` is unknown.
+
+Checks are `predicate`, `original_note_evidence`, or `confirmed_encounter_link`.
+The last two apply to assignments, optionally selected with `assignment_filter`.
+They verify immutable fixture quotes/offsets and, for confirmed links, confirmed
+encounter-relevant linked findings. They do not establish clinical diagnosis or
+interpret guideline permission. Assignment certainty is `assignments[].certainty`,
+not `assignment_status`; confidence is `confidence.level`. Use `item` to check
+array members; path strings do not support wildcards or arbitrary Python code.
+Clinical aliases such as a named disease “assigned” require explicitly provided
+selectors; the runner never invents disease-to-code mappings from prose.
+
+Validation reports list missing split/reviewer metadata and uncompiled prose
+expectations without editing them. Missing split currently defaults to development;
+an explicitly supplied held-out split is preserved. This report is not approval.
+The packet's `evaluation_split` is accepted as a validation alias for `split`.
+Nested `review_metadata` is retained unchanged; its status must agree with the
+top-level review status. Approval uses actual nested reviewer/time (or existing
+flat fields) and never upgrades a pending record. Explicit output predicates
+are checked against the actual CodingResult schema during validation; invalid
+paths are reported. No source/fixture file is rewritten by this workflow.
+
 Finding quotes must occur in the human note with only case/whitespace
 normalization. Select distinct quote spans to disambiguate repeated text. Each
 finding can permit multiple dispositions. Unknown code/source references, duplicate

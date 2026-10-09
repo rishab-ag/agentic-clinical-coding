@@ -10,10 +10,11 @@ from pathlib import Path
 import sys
 from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
-from pydantic import Field, model_validator
+from pydantic import AliasChoices, Field, model_validator
 
 from app.data import SuppliedData, load_supplied_data
 from app.models import CodingResult, Contract, Note
+from app.eval_checks import ExecutableConditionalExpectation, evaluate_check, evaluate_predicate, conditional_schema_issues
 
 DEFAULT_FIXTURES = Path(__file__).resolve().parent.parent / "tests/fixtures/clinical_eval.jsonl"
 
@@ -84,10 +85,17 @@ class AdvisoryConditionalExpectation(Contract):
     then_text: str = Field(alias="then", min_length=1)
 
 
+class FixtureReviewMetadata(Contract):
+    reviewer: Optional[str] = None
+    reviewed_at: Optional[str] = None
+    review_status: Literal["human_approved", "pending_review", "pending_human_review", "rejected"]
+    review_notes: str
+
+
 class HumanFixture(Expectations):
     note_id: str = Field(min_length=1)
     note_text: str = Field(min_length=1)
-    split: Literal["development", "held_out"] = "development"
+    split: Literal["development", "held_out"] = Field(default="development", validation_alias=AliasChoices("split", "evaluation_split"))
     review_status: Literal["human_approved", "pending_review", "pending_human_review", "rejected"]
     reviewed_by: Optional[str] = Field(default=None, min_length=1)
     reviewed_at: Optional[str] = Field(default=None, min_length=1)
@@ -95,17 +103,22 @@ class HumanFixture(Expectations):
     title: Optional[str] = None
     catalogue_basis: Optional[str] = None
     review_rationale: Optional[str] = None
+    review_metadata: Optional[FixtureReviewMetadata] = None
     acceptable_statuses: List[Literal["coded", "provisional", "unresolved"]]
     required_codes: List[str]
     forbidden_codes: List[str]
     relevant_guideline_ids: List[str]
     acceptable_outcomes: List[AcceptableOutcome] = Field(default_factory=list)
-    conditional_expectations: List[Union[ConditionalExpectation, AdvisoryConditionalExpectation]] = Field(default_factory=list)
+    conditional_expectations: List[Union[ConditionalExpectation, ExecutableConditionalExpectation, AdvisoryConditionalExpectation]] = Field(default_factory=list)
     coverage_tags: List[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def coherent_rubric(self):
-        if self.review_status == "human_approved" and (not self.acceptable_statuses or not self.reviewed_by or not self.reviewed_at or not (self.rationale or self.review_rationale)):
+        if self.review_metadata and self.review_metadata.review_status != self.review_status:
+            raise ValueError("Top-level and nested review statuses conflict")
+        reviewer = self.reviewed_by or (self.review_metadata.reviewer if self.review_metadata else None)
+        reviewed_at = self.reviewed_at or (self.review_metadata.reviewed_at if self.review_metadata else None)
+        if self.review_status == "human_approved" and (not self.acceptable_statuses or not reviewer or not reviewed_at or not (self.rationale or self.review_rationale)):
             raise ValueError("Human-approved fixtures require statuses and actual independent review metadata")
         if self.review_status == "human_approved" and any(isinstance(c, AdvisoryConditionalExpectation) for c in self.conditional_expectations):
             raise ValueError("Human-approved conditional prose must be translated by the human into executable expectations before scoring")
@@ -199,7 +212,23 @@ def grade_fixture(fixture: HumanFixture, raw: Any, data: SuppliedData) -> Dict[s
             for o in fixture.acceptable_outcomes):
         errors.append("Decision outside human-approved alternative outcomes")
     groups = [fixture] + [group for group in fixture.conditional_expectations
-        if (group.when_status is None or group.when_status == result.status) and set(group.when_all_codes).issubset(actual_codes)]
+        if isinstance(group, ConditionalExpectation) and (group.when_status is None or group.when_status == result.status) and set(group.when_all_codes).issubset(actual_codes)]
+    result_payload = result.model_dump()
+    for index, conditional in enumerate(fixture.conditional_expectations, 1):
+        if not isinstance(conditional, ExecutableConditionalExpectation):
+            continue
+        schema_errors = conditional_schema_issues(conditional)
+        if schema_errors:
+            errors.extend(f"Conditional expectation {index}: {issue}" for issue in schema_errors)
+            continue
+        trigger = evaluate_predicate(conditional.when, result_payload)
+        if trigger == "unknown":
+            errors.append(f"Conditional expectation {index}: trigger unknown")
+        elif trigger == "met":
+            for check_index, check in enumerate(conditional.checks, 1):
+                outcome = evaluate_check(check, result_payload, fixture.note_id, fixture.note_text)
+                if outcome != "met":
+                    errors.append(f"Conditional expectation {index}, check {check_index}: {outcome}")
     required_codes = {code for group in groups for code in group.required_codes}
     forbidden_codes = {code for group in groups for code in group.forbidden_codes}
     if required_codes - actual_codes:
@@ -343,6 +372,16 @@ def main(argv=None):
                          fixture_gate_met=len(approved) >= 10 and sum(f.split == "held_out" for f in approved) >= 2,
                          review_counts={status: sum(f.review_status == status for f in fixture_set.fixtures)
                                         for status in ("human_approved", "pending_human_review", "pending_review", "rejected")})
+        inventory["split_counts"] = {split: sum(f.split == split for f in fixture_set.fixtures) for split in ("development", "held_out")}
+        inventory["infrastructure_issues"] = [
+            dict(note_id=f.note_id, issues=(
+                (["Split omitted; current schema defaults to development"] if "split" not in f.model_fields_set else []) +
+                (["Reviewer/time approval metadata incomplete"] if not (f.reviewed_by or (f.review_metadata and f.review_metadata.reviewer)) or not (f.reviewed_at or (f.review_metadata and f.review_metadata.reviewed_at)) else []) +
+                (["Prose conditional expectations require explicit selectors/checks; no clinical alias inference"]
+                 if any(isinstance(c, AdvisoryConditionalExpectation) for c in f.conditional_expectations) else []) +
+                [issue for c in f.conditional_expectations if isinstance(c, ExecutableConditionalExpectation)
+                 for issue in conditional_schema_issues(c)]))
+            for f in fixture_set.fixtures]
         if args.validate_fixtures:
             print(json.dumps(dict(type="fixture_validation", status="validated", clinical_scoring=False, **inventory)))
             return 0
