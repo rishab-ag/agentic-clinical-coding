@@ -98,3 +98,26 @@ The fresh export was assembled from tracked and intended new working-tree files
 under ignored `out/clean-run`, with a newly created venv. It is a working-tree
 reproducibility check, not a claim that uncommitted packaging already exists in a
 clean Git clone. All generated artifacts and host custom input are ignored.
+
+## Subsequent Docker verification (2026-10-10)
+
+Docker is now available. `docker compose config --quiet`, `docker compose build`,
+`docker compose up --abort-on-container-exit --exit-code-from app`, and
+`docker compose run --rm app --input /in/example.jsonl` passed. The build initially
+failed accessing sandboxed buildx state, then passed with authorized access.
+The example startup exited zero; stdout batch parsing found exactly two valid
+CodingResult objects. `docker compose run --rm -v "$PWD/out:/in:ro" app
+--input /in/fixture_notes.jsonl --no-model` also passed: ten schema-valid unresolved
+results, one per fixture note, with immutable note text preserved. These checks
+supersede the historical Docker-unavailable results above. They are structural
+checks, not clinical evaluation. No live model was called.
+
+The fixture file was restored to one-object-per-line JSONL with unchanged values.
+Approval validation still fails for E02–E05, E07 and E10 due to prose conditions.
+Reviewer notes still contain draft approval-required wording; no review conclusions
+were fabricated. All 50 guideline drafts and both external proposals remain
+unverified. The pending-fixture model unit test was isolated onto a non-clinical
+dummy file so it no longer depends on the changing clinical review file. Full
+pytest then passed: 181 passed, 1 skipped. Initial run: 180 passed, 1 failed,
+1 skipped due to the fixture-file dependency. Supplied/derived/expanded data
+byte comparisons against HEAD passed. Git diff checks passed.

@@ -17,8 +17,7 @@ docker compose run --rm app --input /in/example.jsonl > out/result.jsonl
 Compose does not load a key into the container; its default runs
 `examples/messy_note.txt` and exits. `compose up` displays Compose log prefixes;
 use `compose run` for machine-readable output. Build requires internet for the
-base image and pinned Python packages. Docker execution has not been verified in
-the current development environment because Docker is unavailable.
+base image and pinned Python packages. Docker build, no-key startup and mounted batch JSONL output have been verified.
 
 Local alternative (Python 3.9+):
 
@@ -55,9 +54,9 @@ records conflicts with supplied CA22/CA40 titles; originals are not rewritten.
 
 Accounting, provenance and quote checks generalize across notes; lexical recall,
 model clinical interpretation and the narrow explicit-field offline extraction
-have no demonstrated clinical accuracy. Ten independent fixtures remain pending;
-Milestone 3 approval is **deferred**, not passed. Next day: complete independent
-clinical/source reviews, evaluate approved held-out fixtures and validate Docker.
+have no demonstrated clinical accuracy. Ten fixtures are marked approved by the reviewer, but six still contain
+non-executable prose conditions; the fixture gate remains **deferred**, not passed. Next day: complete independent
+clinical/source reviews, evaluate approved held-out fixtures and test live model behavior.
 At 50,000 codes, replace full-corpus prompting with hierarchical chapter/code
 retrieval, candidate-recall checks and indexed guideline applicability.
 

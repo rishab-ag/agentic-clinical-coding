@@ -179,13 +179,17 @@ def test_provisional_requires_grounded_permission(data):
     assert result.status=="unresolved" and not result.assignments
 
 
-def test_live_eval_skips_pending_with_fully_configured_dummy_env(monkeypatch,capsys):
+def test_live_eval_skips_pending_with_fully_configured_dummy_env(monkeypatch,capsys,tmp_path):
     from app.live_eval import main
     monkeypatch.setenv("OPENAI_API_KEY","NONSECRET_DUMMY_KEY")
     monkeypatch.setenv("OPENAI_MODEL","dummy-model")
     monkeypatch.setenv("OPENAI_CONTEXT_LIMIT","1000000")
     monkeypatch.setattr("app.live_eval.model_from_environment",lambda:pytest.fail("No provider for pending fixtures"))
-    assert main(["--live"])==0
+    fixture_path=tmp_path / "pending_dummy.jsonl"
+    fixture_path.write_text(json.dumps(dict(note_id="dummy",note_text="NONCLINICAL TEST RECORD",
+        acceptable_statuses=["unresolved"],required_codes=[],forbidden_codes=[],relevant_guideline_ids=[],
+        review_status="pending_human_review",split="development"))+"\n")
+    assert main(["--live","--fixtures",str(fixture_path)])==0
     report=json.loads(capsys.readouterr().out)
     assert report["status"]=="skipped" and report["model_calls"]==0
 
