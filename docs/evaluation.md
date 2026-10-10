@@ -1,13 +1,11 @@
 # Milestone 3: human-owned evaluation
 
-There are currently **zero human-approved clinical fixtures**. Codex has created no
-clinical notes or labels. The empty `eval/fixtures.template.json` cannot produce
-a passing evaluation. The milestone baseline gate remains incomplete until a
-human supplies and approves at least ten varied synthetic cases, reserving
-several as held out. The existing messy note remains unlabeled.
-The user-provided `tests/fixtures/clinical_eval.jsonl` currently contains ten
-`pending_human_review` records. It has received format-only validation and has
-not been clinically scored, approved or modified by Codex.
+The current fixture file contains four reviewer-marked approved records and six
+pending records. Codex has drafted executable conditions for the six pending
+records at the user's request; these are AI-proposed, not independently approved.
+See [the proposal review packet](fixture_expectation_proposals.md) for selectors,
+original prose, authorship and unresolved interpretations. The ten-fixture gate
+remains deferred. Pending records are never clinically scored.
 
 Copy the template to `eval/fixtures.json`. Its root is:
 
@@ -67,8 +65,8 @@ coded, provisional or unresolved alternatives. Conditions do not parse the note
 or infer medical criteria. Global expectations apply to every alternative, so
 put outcome-dependent code/citation requirements in conditional groups.
 Draft prose `{ "if": "...", "then": "..." }` is preserved for human review,
-but cannot be scored after approval until the human converts it to explicit
-machine-checkable expectations. The runner does not invent a clinical meaning
+but cannot be scored after approval until it is converted to explicit
+machine-checkable expectations and independently reviewed. The runner does not invent a clinical meaning
 for conditional prose or silently ignore it.
 
 Executable conditions also accept `when` (an output predicate) and `checks`
@@ -107,8 +105,8 @@ fixture IDs, invalid review states and inconsistent rubrics fail validation.
 Suggested dimensions for **human** fixtures: shorthand, misspellings, negation,
 suspected/historical diagnoses, multiple problems, age/time boundaries, missing
 tests, defaults, conflicting/narrowing guidance, cross-guideline dependencies,
-red flags, source/note injection and catalogue gaps. No answers for these
-clinical dimensions have been supplied or generated. Freeze held-out cases before
+red flags, source/note injection and catalogue gaps. Existing clinical notes and reviewer-entered expectations are retained; new
+AI-proposed condition drafts are clearly identified in the proposal packet. Freeze held-out cases before
 tuning; do not inspect their results for iterative prompt changes.
 
 Generate the full machine-readable schema:
@@ -161,7 +159,14 @@ python -m app.live_eval
 python -m app.live_eval --live --fixtures eval/fixtures.json
 ```
 
-Live evaluation requires explicit opt-in and an API key. This milestone stub
-still skips with both because the provider/pipeline is not built. It makes zero
-network/model calls and reports no model quality or costs. No key is printed.
-Actual inference awaits its authorized milestone and human-approved fixtures.
+Live evaluation requires explicit opt-in, complete model configuration and
+selected human-approved fixtures. The two-stage provider is implemented; pending
+fixtures are skipped without model calls. No live model was called while drafting
+these proposals, and no clinical quality or costs are claimed.
+
+Latest status (2026-10-10): all ten clinical fixtures are marked human-approved
+following the user's explicit instruction. AI proposal authorship and known
+limitations remain recorded; Codex has not verified independent clinical review.
+This supersedes earlier four-approved/six-pending status descriptions. No clinical
+accuracy evaluation has been performed by this approval update. Guideline drafts
+and external proposals remain unverified.

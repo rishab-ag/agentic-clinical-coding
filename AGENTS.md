@@ -27,7 +27,7 @@
 
 ## Evaluation, catalogue origins, and repair
 
-- Never author or approve expected clinical labels for evaluation notes. Human-reviewed labels are independent of the Codex implementation; ask for missing fixture labels.
+- Distinguish AI-proposed evaluation expectations from independently human-reviewed labels; never represent AI-generated labels as independent human approval.
 - Every assigned code must have `catalogue_origin: supplied` and grounded original-note evidence. Expanded-only matches remain `unresolved` with the verified expanded code, provenance and warning under `candidates_considered`; never silently present them as supplied codes.
 - For repairable LLM output validation errors, permit **at most one** bounded model repair call using validator errors and original allowed evidence; then revalidate fully against the immutable original note and source files; reject high-confidence assignments lacking actual original-note quotes even if injection detection misses the attack. Normalize only case and whitespace for quote matching. Never repair clinical uncertainty into certainty.
 - `docker compose run --rm app --input /in/file.jsonl` must emit pipeable machine-readable JSON/JSONL on stdout; logs go to stderr.
@@ -39,7 +39,7 @@
 
 - Never send emails or contact the evaluators.
 - Stage 2 must see all 404 supplied catalogue entries as `code | title` and all 45 raw guideline snippets; BM25 retrieval provides richer candidate context.
-- Codex must not create evaluation labels. Human labels may allow multiple defensible outcomes.
+- Evaluation labels may allow multiple defensible outcomes. Record their authorship and review provenance accurately.
 - Attempt a clinician-confirmed vitiligo (`ED60`) no-key demonstration only after reporting BM25 guideline hits and manual applicability review; if no safe case survives, unresolved is acceptable. Never weaken the gate to force a coded case; do not spend time building a general clinical parser.
 - Add a synthetic messy note under `examples/` early; use repo-local `out/` for output, not Unix-only `/tmp` paths.
 

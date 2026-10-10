@@ -54,8 +54,8 @@ records conflicts with supplied CA22/CA40 titles; originals are not rewritten.
 
 Accounting, provenance and quote checks generalize across notes; lexical recall,
 model clinical interpretation and the narrow explicit-field offline extraction
-have no demonstrated clinical accuracy. Ten fixtures are marked approved by the reviewer, but six still contain
-non-executable prose conditions; the fixture gate remains **deferred**, not passed. Next day: complete independent
+have no demonstrated clinical accuracy. Ten fixtures are marked approved by the reviewer, but six now contain
+AI-proposed executable conditions awaiting independent review; the fixture gate remains **deferred**, not passed. Next day: complete independent
 clinical/source reviews, evaluate approved held-out fixtures and test live model behavior.
 At 50,000 codes, replace full-corpus prompting with hierarchical chapter/code
 retrieval, candidate-recall checks and indexed guideline applicability.

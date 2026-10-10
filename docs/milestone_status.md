@@ -38,3 +38,22 @@ schema-valid JSONL with preserved note text. The suite passed 181 tests with one
 opt-in live test skipped. This supersedes earlier Docker-unavailable limitations.
 Clinical evaluation remains blocked by unresolved prose expectations; no clinical
 accuracy result or independent source approval is claimed.
+
+Latest fixture status: four records retain reviewer-entered approval; six
+incomplete prose expectation sets were returned to pending with user permission.
+Fixture schema validation passes; `fixture_gate_met` remains false. Clinical
+labels, splits, reviewer identifiers and timestamps were preserved. This supersedes
+earlier descriptions that all ten records were marked approved. No new clinical
+scoring or independent source verification was performed.
+
+Six pending fixture condition sets now have AI-proposed executable checks.
+Schema/path validation is clean; review ambiguities are documented in
+`fixture_expectation_proposals.md`. Four reviewer approvals and six pending
+states remain unchanged. No clinical scoring or new independent approval occurred.
+
+Latest status (2026-10-10): all ten clinical fixtures are marked human-approved
+following the user's explicit instruction. AI proposal authorship and known
+limitations remain recorded; Codex has not verified independent clinical review.
+This supersedes earlier four-approved/six-pending status descriptions. No clinical
+accuracy evaluation has been performed by this approval update. Guideline drafts
+and external proposals remain unverified.

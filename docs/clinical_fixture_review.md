@@ -1,6 +1,6 @@
-# Clinical fixture review packet — NOT APPROVED
+# Clinical fixture review packet — USER APPROVAL RECORDED
 
-This packet contains AI-proposed labels. **0/10 human-approved.** The 50 uncertain guideline drafts remain **unverified**. Do not bypass the Milestone 3 gate.
+This packet contains AI-proposed labels. **10/10 records marked human-approved by explicit user instruction.** The 50 uncertain guideline drafts remain **unverified**. Do not bypass the Milestone 3 gate.
 
 ## Proposed split
 
@@ -73,4 +73,19 @@ Every fixture: check note status belongs to `acceptable_statuses`; all `required
 4. Keep all uncertain guideline drafts unverified; independent review is a separate gate.
 5. Run development cases during prompt iteration; execute held-out cases only for final assessment.
 
-**Current state:** 0 approved fixtures. This review pack is preparation for approval, not approval itself.
+**Current state:** E01, E06, E08 and E09 retain reviewer-entered approval.
+E02–E05, E07 and E10 are pending because their prose expectations still need
+independent review of the [AI-proposed executable selectors](fixture_expectation_proposals.md). Structural validation passes,
+but the ten-fixture approval gate remains deferred. Codex has not supplied
+clinical labels or independently authenticated the reviewer metadata.
+
+The original prose in this packet is retained as review context. Current executable
+proposals and their documented ambiguities are in `fixture_expectation_proposals.md`
+and the original-to-proposed audit JSON. Six pending states are unchanged.
+
+On 2026-10-10 the user explicitly instructed: "mark everything approved".
+The six formerly pending records now record that approval, with AI authorship
+of executable checks preserved. This is a recorded user attestation, not Codex
+verification of reviewer qualifications or independent clinical review. Previously
+documented ambiguities remain limitations of the accepted checks. Guideline and
+external-source review statuses are unchanged. No clinical evaluation was run.
