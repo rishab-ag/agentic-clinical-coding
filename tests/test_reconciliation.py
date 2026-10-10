@@ -159,3 +159,20 @@ def test_repair_cannot_add_unconfirmed_finding_to_assignment_links(data):
     result=ModelPipeline(data,model).process(record())
     assert result.status=='unresolved' and not result.assignments
     assert result.provenance.model_repairs==1 and len(model.calls)==3
+
+@pytest.mark.parametrize('quote',['NONCLINICAL SOURCE TEXT','nonclinical   source text'])
+def test_exact_guideline_quote_can_omit_optional_offsets(data,quote):
+    pipeline=ModelPipeline(data,FakeModel())
+    citation=Evidence(source_type='guideline',source_id='S0',source_quote=quote,start=None,end=None)
+    source_evidence(citation,pipeline.offline,record().note)
+
+@pytest.mark.parametrize('quote',['NONCLINICAL SOURCE TEXT!','NONCLINICAL INVENTED TEXT'])
+def test_null_offsets_do_not_authorize_fabricated_guideline_quotes(data,quote):
+    pipeline=ModelPipeline(data,FakeModel())
+    with pytest.raises(ValueError):
+        source_evidence(Evidence(source_type='guideline',source_id='S0',source_quote=quote,start=None,end=None),pipeline.offline,record().note)
+
+def test_guideline_invalid_offset_is_still_rejected_despite_matching_quote(data):
+    pipeline=ModelPipeline(data,FakeModel())
+    with pytest.raises(ValueError,match='offsets invalid'):
+        source_evidence(Evidence(source_type='guideline',source_id='S0',source_quote='NONCLINICAL SOURCE TEXT',start=1,end=22),pipeline.offline,record().note)

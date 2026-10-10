@@ -51,3 +51,25 @@ quotes, assertions or clinical certainty. Full original-source validation still
 runs afterward. Dummy regressions cover preserving an unlinked finding as
 unresolved and rejecting repairs that expand assignment links to suspected
 findings. No fixture-specific medical rule was introduced.
+
+## Model citation formatting (two-stage-v2)
+
+A repaired live proposal failed because its guideline offsets did not match the
+raw guideline body. Both stages now request exact quotes with null start/end,
+and the Evidence schema describes offsets as optional, independently computed
+source-text character positions. Model-generated prompt/token offsets must not
+be used as source offsets. The application does not remove or correct invalid
+spans after receipt: explicitly supplied bad spans still fail. Null-offset quotes
+are validated against retained original source text with case/whitespace
+normalization only; punctuation changes and fabricated text are rejected.
+
+The updated prompt version records this formatting contract. Production medical
+rules, assignment evidence, reviewer metadata and fixture expectations are
+unchanged. Full regression tests: 215 passed, 1 skipped. No-key messy-note smoke
+and diff check passed. A live single-note verification is reported separately.
+
+Live verification with two-stage-v2 reached both stages and one repair. E01 still
+failed its rubric, now with `Unresolved finding or safety concern blocks high
+confidence`, rather than the earlier guideline-offset error. Actual input tokens:
+extract 503, decide 21193, repair 28460. No assignment was accepted; this does not
+establish clinical correctness. The confidence guard was not removed or relaxed.

@@ -18,8 +18,8 @@ class Evidence(Contract):
     source_type: Literal["note", "catalogue", "guideline"]
     source_id: str = Field(min_length=1)
     source_quote: str = Field(min_length=1)
-    start: Optional[int] = Field(default=None, ge=0)
-    end: Optional[int] = Field(default=None, ge=0)
+    start: Optional[int] = Field(default=None, ge=0, description="Optional source-text character offset. Model responses should use null and supply the exact source_quote; never estimate offsets.")
+    end: Optional[int] = Field(default=None, ge=0, description="Optional exclusive source-text character offset. Model responses should use null; pair with start only when independently computed.")
 
     @model_validator(mode="after")
     def valid_offsets(self):
