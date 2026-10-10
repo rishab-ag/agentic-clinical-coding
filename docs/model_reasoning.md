@@ -119,3 +119,7 @@ clinical correctness is asserted. API/model access, network availability and
 human review remain external requirements.
 
 Milestone 6 supersedes the earlier zero-repair limitation: see [reconciliation](reconciliation.md) for the single bounded structural repair and its restrictions.
+
+Gemini is now supported through a separate native REST adapter, selected using
+`MODEL_PROVIDER=gemini` and `GEMINI_*` environment settings. See `gemini.md`.
+The same original-source validators and bounded repair rules apply.

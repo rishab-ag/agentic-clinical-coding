@@ -1,6 +1,6 @@
 # Agentic clinical coding
 
-Python CLI for TXT/JSON/JSONL notes: BM25 retrieval, optional two-stage model
+Python CLI for TXT/JSON/JSONL notes: BM25 retrieval, optional two-stage OpenAI/Gemini model
 reasoning, grounded evidence validation and one bounded structural repair. Every
 record produces one JSONL result with findings, confidence, citations and unresolved
 issues. **No-key mode currently abstains on all notes**; it preserves input rather
@@ -32,7 +32,7 @@ python -m pytest -q
 
 `requirements-lock.txt` pins the tested dependency versions used by Docker.
 The optional model reads environment variables described in
-[model configuration](docs/model_reasoning.md); copying `.env.example` alone does
+[model configuration](docs/model_reasoning.md) and [Gemini setup](docs/gemini.md); copying `.env.example` alone does
 not load variables. No credentials are required for offline processing.
 
 The unchanged 404 codes and 45 guidelines are untrusted evidence, not instructions.

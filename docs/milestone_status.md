@@ -57,3 +57,8 @@ limitations remain recorded; Codex has not verified independent clinical review.
 This supersedes earlier four-approved/six-pending status descriptions. No clinical
 accuracy evaluation has been performed by this approval update. Guideline drafts
 and external proposals remain unverified.
+
+No-key fixture evaluation executed on 2026-10-10: development 5/7 rubric matches,
+held-out 2/3, all ten records accounted for and unresolved. Both scoring runs
+returned exit 1; clinical evaluation has not passed. Live model evaluation skipped
+because credentials/configuration are absent. See `clinical_testing_report.md`.

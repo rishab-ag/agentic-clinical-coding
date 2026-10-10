@@ -156,12 +156,21 @@ class OpenAIModel:
 
 
 def model_from_environment():
-    key = os.environ.get("OPENAI_API_KEY", "").strip()
+    provider=os.environ.get("MODEL_PROVIDER","").strip().lower() or (
+        "gemini" if os.environ.get("GEMINI_API_KEY", "").strip() and not os.environ.get("OPENAI_API_KEY", "").strip() else "openai")
+    if provider not in ("openai","gemini"):
+        raise ValueError("Unsupported model provider")
+    prefix=provider.upper()
+    key = os.environ.get(prefix+"_API_KEY", "").strip()
     if not key:
         return None
-    return OpenAIModel(ModelConfig(api_key=key,model=os.environ.get("OPENAI_MODEL", "").strip(),
-        context_limit=int(os.environ.get("OPENAI_CONTEXT_LIMIT", "0")),
-        max_output_tokens=int(os.environ.get("OPENAI_MAX_OUTPUT_TOKENS", "4096")),
-        timeout=float(os.environ.get("OPENAI_TIMEOUT_SECONDS", "30")),
-        retries=int(os.environ.get("OPENAI_RETRIES", "1")),
-        concurrency=int(os.environ.get("CLINICAL_CONCURRENCY", "1"))))
+    config=ModelConfig(api_key=key,model=os.environ.get(prefix+"_MODEL", "").strip(),
+        context_limit=int(os.environ.get(prefix+"_CONTEXT_LIMIT", "0")),
+        max_output_tokens=int(os.environ.get(prefix+"_MAX_OUTPUT_TOKENS", "4096")),
+        timeout=float(os.environ.get(prefix+"_TIMEOUT_SECONDS", "30")),
+        retries=int(os.environ.get(prefix+"_RETRIES", "1")),
+        concurrency=int(os.environ.get("CLINICAL_CONCURRENCY", "1")))
+    if provider=="gemini":
+        from app.gemini_provider import GeminiModel
+        return GeminiModel(config)
+    return OpenAIModel(config)

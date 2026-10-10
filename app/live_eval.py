@@ -19,9 +19,12 @@ def main(argv=None):
     reason=None
     if not args.live:
         reason="Live evaluation disabled; explicit --live required"
-    elif not os.environ.get("OPENAI_API_KEY", "").strip():
-        reason="OPENAI_API_KEY absent; no model call attempted"
-    elif not os.environ.get("OPENAI_MODEL", "").strip() or not os.environ.get("OPENAI_CONTEXT_LIMIT", "").strip():
+    provider=os.environ.get("MODEL_PROVIDER", "").strip().lower() or (
+        "gemini" if os.environ.get("GEMINI_API_KEY", "").strip() and not os.environ.get("OPENAI_API_KEY", "").strip() else "openai")
+    prefix=provider.upper()
+    if args.live and not os.environ.get(prefix+"_API_KEY", "").strip():
+        reason="Selected provider API key absent; no model call attempted"
+    elif args.live and (not os.environ.get(prefix+"_MODEL", "").strip() or not os.environ.get(prefix+"_CONTEXT_LIMIT", "").strip()):
         reason="Model/context not configured; no model call attempted"
     if reason:
         print(json.dumps(dict(type="live_evaluation",status="skipped",reason=reason,model_calls=0)))
@@ -34,7 +37,8 @@ def main(argv=None):
             print(json.dumps(dict(type="live_evaluation",status="skipped",reason="No human-approved fixtures in selected split",model_calls=0)))
             return 0
         from app.reasoning import ModelPipeline
-        pipeline=ModelPipeline(data,model_from_environment())
+        model=model_from_environment()
+        pipeline=ModelPipeline(data,model)
         position=0
         def decide(note):
             nonlocal position

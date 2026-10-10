@@ -89,7 +89,7 @@ class ModelPipeline:
         result=baseline.model_copy(deep=True)
         provenance=result.provenance
         provenance.mode="model"
-        provenance.provider="openai"
+        provenance.provider=getattr(self.model,"provider","openai")
         provenance.model=self.model.config.model
         provenance.prompt_version=PROMPT_VERSION
         try:
@@ -222,8 +222,9 @@ class ModelPipeline:
 
     def _stage(self,name,messages,contract,provenance):
         schema=strict_schema(contract)
-        bound=prompt_upper_bound(self.model.config,messages,schema,
-                                 "clinical_extraction" if name=="extract" else "clinical_decision")
+        label="clinical_extraction" if name=="extract" else "clinical_decision"
+        bound=(self.model.prompt_bound(messages,schema,label) if hasattr(self.model,"prompt_bound") else
+               prompt_upper_bound(self.model.config,messages,schema,label))
         provenance.stage_prompt_upper_bounds[name]=bound
         if not provenance.stage_prompt_tokens:
             provenance.prompt_token_count=bound
