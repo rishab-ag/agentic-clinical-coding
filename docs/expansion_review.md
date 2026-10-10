@@ -1,9 +1,10 @@
 # Milestone 7 external source review packet
 
-Access date: 2026-10-10. No external entry has independent approval. All proposed
-records are `pending_human_review`; none are in runtime retrieval. The expansion
-requirement is therefore **outstanding**, not passed. Source observations below
-are fetched facts, not independent human verification or confirmed clinical labels.
+Access date: 2026-10-10. **Current state:** `1B71` is active after an AI-performed
+source check requested by the repository owner; the skin-referral excerpt remains
+`pending_human_review` and out of retrieval. No entry has independent human or
+clinical approval; see "Source check and activation" below. Source observations
+are fetched facts, not confirmed clinical labels.
 
 ## Gaps observed in supplied data
 
@@ -87,3 +88,22 @@ fetch is introduced. JSONL output cannot overwrite the expansion directory.
 
 Stop for independent review here. Milestone 8 has not been implemented. Milestone 3
 clinical approval remains deferred; clinical accuracy is unscored.
+
+## Source check and activation (2026-10-10)
+
+Performed by Claude Code at the repository owner's instruction, by downloading the
+files and extracting their text. This is an AI source check, not an independent
+human review. The manifest status value `human_approved` is the activation state
+the loader requires; the `review.reviewer` field records who actually checked.
+
+| Code | Title | Primary-source URL | Verified facts | Unverified facts |
+| --- | --- | --- | --- | --- |
+| 1B71 | Necrotising fasciitis | [WHO Reference Guide](https://icdcdn.who.int/icd11referenceguide/en/refguide.pdf#page=342); [ICD-11 MMS 2026-01 release table](https://icdcdn.who.int/static/releasefiles/2026-01/SimpleTabulation-ICD-11-MMS-en.zip) | Guide PDF page 342 shows the exact pair. The release table lists code 1B71, this title, Foundation URI `http://id.who.int/icd/entity/522973276`, chapter 01 "Certain infectious or parasitic diseases", parent block "Pyogenic bacterial infections of the skin or subcutaneous tissues". The [WHO licence](https://icd.who.int/en/docs/ICD11-license.pdf) sections 1.2.2-1.2.3 allow software incorporation with code, title and URI under CC BY-ND 3.0 IGO. | Independent human or clinical review; the WHO browser page itself; applicability to any note. |
+| — | WHO skin disease classification: urgent referral excerpt | [WHO skin classification](https://cdn.who.int/media/docs/default-source/ntds/skin-ntds/common-skin-diseases-for-managemen-or-referral-at-primary-health-care-level.pdf#page=12) | PDF page 12 contains the quoted sentence in the necrotising-fasciitis urgent-referral row. The cover reads "Version 1.0" and "For external expert review draft". | Final publication status; reuse terms (none found in the 45-page PDF); clinical applicability. **Not activated.** |
+
+Downloaded-file SHA-256 values are recorded in the manifest's `fetched_facts`.
+Expanded entries are now ranked in one index with the supplied catalogue and
+matched on title and synonyms only; before that change a one-entry index
+surfaced 1B71 on an unrelated note through a shared common word. A synthetic
+necrotising-fasciitis note returns `unresolved` with 1B71 as an expanded
+candidate, offline and through the live model path; no assignment is produced.

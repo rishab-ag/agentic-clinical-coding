@@ -51,8 +51,10 @@ class NoKeyPipeline:
             if pending: self.expansion_warning=f"{pending} external proposals pending independent review; excluded from retrieval"
         except (OSError, ValueError):
             self.expansion_warning="External manifest unavailable/invalid; external data excluded"
-        self.expanded_index=BM25([SearchDocument(source_id=e.code,
-            text=scan_untrusted_text(" ".join([e.title,e.chapter]+e.synonyms)).retained_text)
+        # Expanded entries are ranked against the supplied catalogue and matched on
+        # title/synonyms only, so a common word or chapter label cannot surface one.
+        self.expanded_index=BM25(self.catalogue_index.documents+[SearchDocument(source_id=e.code,
+            text=scan_untrusted_text(" ".join([e.title]+e.synonyms)).retained_text)
             for e in self.expanded_catalogue.values()])
 
     def provenance(self):
@@ -120,6 +122,7 @@ class NoKeyPipeline:
         try:
             safe_note = scan.retained_text
             for code,score in self.expanded_index.search(safe_note,limit=5):
+                if code not in self.expanded_catalogue: continue
                 entry=self.expanded_catalogue[code]
                 result.candidates_considered.append(Candidate(code=code,title=entry.title,catalogue_origin="expanded",
                     retrieval_score=score,source=entry.source.url,status="unresolved",

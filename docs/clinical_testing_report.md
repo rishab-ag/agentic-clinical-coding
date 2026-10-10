@@ -76,3 +76,32 @@ as unknown, and a proposed assignment with omitted reviews receives the single
 permitted repair, which may add missing assessments but not alter existing ones.
 That change is covered by dummy-record unit tests only; development notes were
 not rerun after it because quota was exhausted. The held-out notes ran after it.
+
+### Second live pass on `gemini-3.5-flash-lite` (2026-10-10)
+
+This model's free-tier bucket had enough quota for all ten fixtures, run one note
+per process with unchanged code. Single runs, same caveats as above.
+
+| Split | Rubric matches | Coded | Refused |
+| --- | --- | --- | --- |
+| development (E01–E07) | 6/7 | E01 (AA30) | E02–E07 |
+| held out (E08–E10) | 2/3 | none | E08–E10 |
+
+E02 fails the same exact-string discriminator predicate. E09 again fails because
+it requires `coded` with CA22; the proposal was refused for a disposition that
+named a code with no matching assignment. Refusals that passed validation carried
+note-specific reasons, for example that the supplied catalogue has no entry for
+the suspected condition in E06.
+
+Run-to-run variation is real on this model. E03 was refused in all three runs,
+once with a validated reason and twice on accounting; `gemini-3-flash-preview`
+coded it. A second E01 run was refused after a repair altered the assignment,
+so E01 coded in one of two runs. A trial change that made the
+disposition-without-assignment mismatch repairable rescued nothing in three
+development reruns and was reverted.
+
+The model also returned bare finding IDs as `unresolved` entries on the example
+note and two held-out notes. The prompt now requires sentence-form reasons; this
+was confirmed on `examples/messy_note.txt` only. Fixtures were not rerun after
+that wording change. A keyed `docker compose run` on the example note completed
+in model mode and emitted schema-valid JSONL.

@@ -180,7 +180,8 @@ class ModelPipeline:
                             candidate.reason="Source-reviewed external candidate; clinical assignment validation failed"
                         else:
                             candidate.reason="Unverified model-proposed expanded candidate; not eligible for assignment"
-                        result.candidates_considered.append(candidate)
+                        result.candidates_considered=[c for c in result.candidates_considered
+                            if (c.catalogue_origin,c.code)!=("expanded",candidate.code)]+[candidate]
                         result.warnings.append("Expanded-only candidate retained unresolved; source reviewed" if entry else
                                                "Expanded candidate provenance unverified; source is a model claim, not verification")
             result.assignments=[]

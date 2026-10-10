@@ -35,12 +35,14 @@ def reviewed(item):
     return dict(item,review_status='human_approved',review=dict(reviewer='DUMMY TEST SIMULATION',reviewed_at='2000-01-01',
         payload_sha256=entry_digest(entry),exact_mapping_checked=True,source_checked=True,reuse_permission_checked=True,note='Nonclinical test only'))
 
-def test_actual_proposals_pending_and_not_loaded():
+def test_actual_manifest_activates_only_the_source_checked_code():
     supplied=load_supplied_data()
     manifest,digest=load_expansion(supplied)
-    assert len(manifest.entries)==2 and all(e.review_status=='pending_human_review' and e.review is None for e in manifest.entries)
+    assert {e.entry_id:e.review_status for e in manifest.entries}=={
+        'EXT-ICD-NF':'human_approved','EXT-GUIDE-SKIN-REFERRAL':'pending_human_review'}
     pipeline=NoKeyPipeline(supplied)
-    assert pipeline.expanded_catalogue==pipeline.expanded_guidelines=={}
+    assert list(pipeline.expanded_catalogue)==['1B71'] and pipeline.expanded_guidelines=={}
+    assert '1B71' not in pipeline.catalogue
     assert pipeline.provenance().expansion_sha256==digest
 
 @pytest.mark.parametrize('kind',['catalogue','guideline'])
@@ -96,3 +98,15 @@ def test_output_cannot_overwrite_manifest(tmp_path,capsys):
     from app.main import main
     assert main(['--input','examples/messy_note.txt','--output',str(DEFAULT_MANIFEST),'--no-model'])==1
     assert 'external source' in capsys.readouterr().err
+
+def test_activated_code_surfaces_only_for_matching_notes_and_never_assigns():
+    pipeline=NoKeyPipeline(load_supplied_data())
+    def run(text):
+        return pipeline.process(InputRecord(note=Note(note_id='n',text=text),position=1,original_record=text))
+    unrelated=run(Path('examples/vitiligo_note.txt').read_text())
+    assert all(c.catalogue_origin=='supplied' for c in unrelated.candidates_considered)
+    matching=run('SYNTHETIC. Surgeon confirms necrotising fasciitis of the leg.')
+    hit=[c for c in matching.candidates_considered if c.catalogue_origin=='expanded']
+    assert [c.code for c in hit]==['1B71'] and hit[0].status=='unresolved'
+    assert matching.status=='unresolved' and not matching.assignments
+    assert any('Expanded-only candidate 1B71' in w for w in matching.warnings)

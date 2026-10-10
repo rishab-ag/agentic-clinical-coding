@@ -68,6 +68,13 @@ Live Gemini status (2026-10-10): the earlier HTTP 404 was a retired model ID
 complete. Prompt `two-stage-v3` states the output accounting contract; omitted
 guideline reviews are handled locally without relaxing assignment gates. Single
 live runs: two fixtures coded, eight refused, held-out 2/3 rubric matches with
-E09 refused. Compose now forwards optional model variables. Suite: 220 passed,
+E09 refused. A second pass on `gemini-3.5-flash-lite` gave development 6/7 and
+held-out 2/3 with one fixture coded and visible run-to-run variation. Keyed
+Docker execution in model mode was verified on the example note. Compose now forwards optional model variables. Suite: 220 passed,
 1 skipped. See `clinical_testing_report.md` and `gemini.md`. Free-tier quota
 limited every run; no clinical accuracy claim is made.
+
+External expansion (2026-10-10): `1B71` activated after an AI-performed WHO source
+check requested by the owner; the skin-referral excerpt stays pending (review
+draft, no reuse terms). Expanded codes remain unresolved candidates only. No
+independent human review occurred. Suite: 221 passed, 1 skipped.

@@ -67,7 +67,9 @@ subsumed under that code, and each of those dispositions carries that
 assignment_code; every other disposition has assignment_code null. An assignment
 cites at least one guideline you assessed as met. High confidence is invalid while
 any finding is unresolved or unresolved/safety_flags is nonempty; lower the
-confidence or refuse instead of dropping the concern.""",
+confidence or refuse instead of dropping the concern. Each unresolved entry is a
+self-contained sentence saying what could not be resolved and why, never a bare
+finding ID.""",
         dict(note_id=note.note_id,original_note=note.text,trust_scan=scan_untrusted_text(note.text).model_dump(),
              extraction=extraction.model_dump(),
              required_guideline_review_ids=[g.id for g in data.guidelines]+list(pipeline.expanded_guidelines),

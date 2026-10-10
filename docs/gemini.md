@@ -175,3 +175,9 @@ fewer than ten notes a day. HTTP 429 and 503 are refused per note as unresolved;
 they are availability failures, not model judgments. A report in which every
 note shows `Gemini HTTP request failed (status 429)` is the offline baseline, not
 a model evaluation.
+
+`gemini-3.5-flash-lite` has a separate, larger free-tier bucket and completed all
+ten fixtures at about 15 seconds and two requests per note. It is more
+conservative and less consistent on output accounting than the larger models
+tried; see `clinical_testing_report.md`. `gemini-3.7-flash` returned HTTP 503 or
+timed out on every attempt that day.

@@ -7,34 +7,46 @@
       "catalogue_origin": "expanded",
       "code": "1B71",
       "title": "Necrotising fasciitis",
-      "chapter": null,
+      "chapter": "Certain infectious or parasitic diseases",
       "synonyms": [],
       "text": null,
-      "icd_uri": null,
+      "icd_uri": "http://id.who.int/icd/entity/522973276",
       "source": {
         "url": "https://icdcdn.who.int/icd11referenceguide/en/refguide.pdf",
         "publisher": "World Health Organization",
         "accessed_date": "2026-10-10",
-        "version": "Reference Guide copyright 2022; live PDF accessed 2026-10-10; specific MMS release not established",
+        "version": "ICD-11 MMS release 2026-01 (WHO SimpleTabulation file, version line \"2026 Jan 17 - 05:30 UTC\"); Reference Guide copyright WHO 2022",
         "locator": "PDF page 342 (zero-based 341), printed page 340",
         "fragment": "1B71 Necrotising fasciitis",
         "fragment_sha256": "f86409dd258ae9c3aa31937f35b698ad3d02a3f97382aefc30c88d16d07ee8cb",
         "license_url": "https://icd.who.int/en/docs/ICD11-license.pdf",
-        "attribution_note": "World Health Organization; source content reproduced verbatim as a short review fragment. No WHO endorsement. Runtime reuse is pending independent permission review.",
+        "attribution_note": "International Classification of Diseases, Eleventh Revision (ICD-11), World Health Organization. Licensed under CC BY-ND 3.0 IGO. Code, title and URI reproduced verbatim and unmodified; no WHO endorsement. Chapter title is WHO text; all other fields in this record are additions that do not originate from WHO.",
         "fetched_facts": [
-          "The fetched WHO reference guide displays this code/title pair."
+          "WHO Reference Guide PDF page 342 shows the line \"1B71 Necrotising fasciitis\" (downloaded PDF SHA-256 55808d0d1d9358c1bdade96a29541c610624d8d6ebcb76081d87ec882cde48b1).",
+          "WHO SimpleTabulation-ICD-11-MMS-en for release 2026-01 (https://icdcdn.who.int/static/releasefiles/2026-01/SimpleTabulation-ICD-11-MMS-en.zip) lists code 1B71, title \"Necrotising fasciitis\", Foundation URI http://id.who.int/icd/entity/522973276, ChapterNo 01, parent block \"Pyogenic bacterial infections of the skin or subcutaneous tissues\".",
+          "The same file titles chapter 01 \"Certain infectious or parasitic diseases\" and lists children 1B71.0, 1B71.1, 1B71.2, 1B71.Y and 1B71.Z.",
+          "The WHO licence (section 1.2) licenses the classification under CC BY-ND 3.0 IGO; sections 1.2.2-1.2.3 allow incorporation into software when code, title and URI are kept with attribution."
         ],
         "unverified_facts": [
-          "Current release-specific mapping, hierarchy, chapter and WHO entity URI require review.",
-          "Software reuse permission and human source approval remain outstanding."
+          "No independent human or clinical review: the source check was performed by an AI coding assistant at the repository owner's instruction.",
+          "Clinical applicability to any note is not established by this record; it can only appear as an unresolved expanded candidate.",
+          "The WHO browser entity page was not opened; URI and chapter come from the WHO release table."
         ]
       },
       "reason": "GDL-032 describes a necrotising process absent from supplied catalogue titles; proposal only, not a coding rule.",
       "linked_supplied_guideline_ids": [
         "GDL-032"
       ],
-      "review_status": "pending_human_review",
-      "review": null
+      "review_status": "human_approved",
+      "review": {
+        "reviewer": "Claude Code (AI assistant), at the repository owner's instruction; not an independent human review",
+        "reviewed_at": "2026-10-10",
+        "payload_sha256": "8c82281f70690409fcba815a3010fd804029a7e421eeb47577df3f6cf3bff35d",
+        "exact_mapping_checked": true,
+        "source_checked": true,
+        "reuse_permission_checked": true,
+        "note": "Code, title, URI and chapter matched against two WHO primary files downloaded on the review date; licence sections 1.2.2-1.2.3 read. Status value human_approved is the manifest activation state, not a claim of human clinical sign-off."
+      }
     },
     {
       "entry_id": "EXT-GUIDE-SKIN-REFERRAL",
@@ -50,18 +62,21 @@
         "url": "https://cdn.who.int/media/docs/default-source/ntds/skin-ntds/common-skin-diseases-for-managemen-or-referral-at-primary-health-care-level.pdf",
         "publisher": "World Health Organization",
         "accessed_date": "2026-10-10",
-        "version": "Undated PDF as fetched 2026-10-10; publication/effective date not established",
+        "version": "Version 1.0, cover marked \"For external expert review draft\"; states ICD-11 MMS release 2026-01; no publication date",
         "locator": "PDF page 12 (zero-based 11), necrotising fasciitis row",
         "fragment": "Severe pain disproportionate to clinical findings.",
         "fragment_sha256": "03e77303af8e8a2f93d6e284e0087d0cf6022e644ec4258f27ce34d1395bad7e",
         "license_url": null,
-        "attribution_note": "World Health Organization; source content reproduced verbatim as a short review fragment. No WHO endorsement. Runtime reuse is pending independent permission review.",
+        "attribution_note": "World Health Organization draft; one sentence quoted verbatim for source review only. No WHO endorsement. Not activated: draft status and no located reuse terms.",
         "fetched_facts": [
-          "WHO table lists this feature in its necrotising fasciitis urgent-referral row.",
-          "The row calls for hospital transfer and surgical assessment."
+          "PDF page 12, urgent-referral row \"Necrotising fasciitis | 1B71 Necrotising fasciitis\" contains \"Severe pain disproportionate to clinical findings.\" (line-wrapped in the PDF; downloaded PDF SHA-256 a3e79f9418effea177516aca07d2089521a4e376785f4b7af9611f0e63dafeb3).",
+          "The same row says to arrange immediate transfer to hospital and gives \"Immediate referral for urgent surgical assessment and hospital-based management.\"",
+          "The cover reads \"Version 1.0\" and \"For external expert review draft\"."
         ],
         "unverified_facts": [
-          "Exact effective date, reuse permission and independent clinical applicability review remain outstanding."
+          "The document is a review draft, not a finalized WHO publication.",
+          "No copyright, licence or reuse statement was found anywhere in the 45-page PDF, so reuse permission is not established.",
+          "No independent human or clinical applicability review."
         ]
       },
       "reason": "Adds external source context for GDL-032 urgency gap; excerpt is insufficient alone for diagnosis or assignment.",

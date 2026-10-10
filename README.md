@@ -44,24 +44,39 @@ and warnings. All **50 derived drafts remain unverified**; no human-verified har
 gates are claimed. Embeddings, LangGraph and OCR were left out to keep the text
 pipeline small and avoid additional downloads and orchestration.
 
-[External proposals](docs/expansion_review.md) cover the necrotising-infection gap:
-[WHO's reference guide](https://icdcdn.who.int/icd11referenceguide/en/refguide.pdf)
-and [skin referral material](https://cdn.who.int/media/docs/default-source/ntds/skin-ntds/common-skin-diseases-for-managemen-or-referral-at-primary-health-care-level.pdf).
-Both proposals remain pending source/reuse review and excluded from retrieval;
-no approved external additions exist. Reviewed expanded-only codes would remain
-unresolved candidates, never supplied-origin assignments. The source audit also
-records conflicts with supplied CA22/CA40 titles; originals are not rewritten.
+**Added data.** One external code is active: `1B71 | Necrotising fasciitis`
+(`http://id.who.int/icd/entity/522973276`, chapter 01). GDL-032 describes a necrotising
+infection and no supplied title names it, so every nearby supplied code is a wrong answer.
+Sources: [WHO's reference guide](https://icdcdn.who.int/icd11referenceguide/en/refguide.pdf)
+(PDF page 342) and WHO's [ICD-11 MMS 2026-01 release table](https://icdcdn.who.int/static/releasefiles/2026-01/SimpleTabulation-ICD-11-MMS-en.zip),
+used under CC BY-ND 3.0 IGO with code, title and URI kept. It lives in
+`data/expanded/proposals.json`, apart from the supplied files. The source check was done
+by the AI assistant at my instruction, not by an independent human or clinician. An
+expanded code is never assigned: a matching note returns `unresolved` with `1B71` as a
+sourced candidate. A second proposal, a
+[WHO skin-referral excerpt](https://cdn.who.int/media/docs/default-source/ntds/skin-ntds/common-skin-diseases-for-managemen-or-referral-at-primary-health-care-level.pdf),
+stays inactive because the document is a review draft with no reuse terms. The
+[source audit](docs/expansion_review.md) also records supplied titles that conflict with
+WHO's guide (CA22/CA40, 8B00); the supplied files are not rewritten.
 
-Accounting, provenance and quote checks generalize across notes; lexical recall,
-model clinical interpretation and the narrow explicit-field offline extraction
-have no demonstrated clinical accuracy. Ten fixtures are marked approved by the reviewer, but six now contain
-AI-proposed executable conditions awaiting independent review; the fixture gate remains **deferred**, not passed. Single live Gemini
-runs coded two of ten fixtures and refused eight, one of them (held-out E09) wrongly; see the
-[testing report](docs/clinical_testing_report.md). Next day: independent clinical/source reviews and a repeatable live evaluation.
-At 50,000 codes, replace full-corpus prompting with hierarchical chapter/code
-retrieval, candidate-recall checks and indexed guideline applicability.
+**What survives new notes.** One result per record, quotes checked against the original
+note, supplied-only assignments, quarantine of instructions inside notes and guidelines,
+and refusal when the diagnosis is outside the catalogue.
 
-Built with Codex. An actual trust-screening change missed `AI INSTRUCTION`; a
-non-clinical regression test exposed it and the generic marker rule was corrected.
-See [validation and remaining requirements](docs/reproducibility.md). The human
-reviews and commits milestones; no automatic commits or evaluator messages.
+**What will not.** Coding recall. The validator refuses more than it should: in single
+live runs on two Gemini models at most two of ten fixtures were coded, and an
+imaging-confirmed pneumonia (held-out E09) was refused both times. Output varies between
+runs on the smaller model, and no-key mode abstains on every note. Fixture expectations
+are AI-proposed and owner-approved, not independently reviewed, so the
+[testing report](docs/clinical_testing_report.md) is not an accuracy claim.
+
+**Not built, and next.** Independent clinical review of fixtures and guideline drafts, a
+repeatable multi-run live evaluation, and a less brittle validator. At 50,000 codes,
+replace full-corpus prompting with hierarchical chapter/code retrieval, candidate-recall
+checks and indexed guideline applicability.
+
+**Tooling.** Built with Codex, then Claude Code for live testing and fixes. Wrong and
+caught: the generated validator threw away a correct, grounded `AA30` answer on output
+bookkeeping, and mocked tests passed throughout; only a live run exposed it. Earlier, a
+trust-screening change missed `AI INSTRUCTION` until a regression test exposed it. See
+[validation and remaining requirements](docs/reproducibility.md).
