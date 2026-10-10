@@ -14,8 +14,8 @@ docker compose run --rm app --input /in/example.jsonl > out/result.jsonl
 # Put your own file in ./input, then use --input /in/custom.jsonl.
 ```
 
-Compose does not load a key into the container; its default runs
-`examples/messy_note.txt` and exits. `compose up` displays Compose log prefixes;
+Compose forwards model variables only if exported or in an untracked `.env`; a
+clean clone runs offline. Its default runs `examples/messy_note.txt` and exits. `compose up` displays Compose log prefixes;
 use `compose run` for machine-readable output. Build requires internet for the
 base image and pinned Python packages. Docker build, no-key startup and mounted batch JSONL output have been verified.
 
@@ -55,8 +55,9 @@ records conflicts with supplied CA22/CA40 titles; originals are not rewritten.
 Accounting, provenance and quote checks generalize across notes; lexical recall,
 model clinical interpretation and the narrow explicit-field offline extraction
 have no demonstrated clinical accuracy. Ten fixtures are marked approved by the reviewer, but six now contain
-AI-proposed executable conditions awaiting independent review; the fixture gate remains **deferred**, not passed. Next day: complete independent
-clinical/source reviews, evaluate approved held-out fixtures and test live model behavior.
+AI-proposed executable conditions awaiting independent review; the fixture gate remains **deferred**, not passed. Single live Gemini
+runs coded two of ten fixtures and refused eight, one of them (held-out E09) wrongly; see the
+[testing report](docs/clinical_testing_report.md). Next day: independent clinical/source reviews and a repeatable live evaluation.
 At 50,000 codes, replace full-corpus prompting with hierarchical chapter/code
 retrieval, candidate-recall checks and indexed guideline applicability.
 

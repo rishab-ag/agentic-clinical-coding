@@ -135,7 +135,8 @@ class ModelPipeline:
                 # may only retain identical assignments from the first proposal.
                 repair_messages=original_messages + messages(
                     "Repair output structure/accounting once. Do not add or change assignments, "
-                    "guideline assessments, evidence, assertions or clinical certainty. "
+                    "existing guideline assessments, evidence, assertions or clinical certainty. "
+                    "Assessments may be added only for guideline IDs missing from the output. "
                     "Remove invalid assignments or refuse. Original sources remain authoritative.",
                     dict(invalid_output=original,validator_errors=(error.errors if isinstance(error,WireFailure) else str(error))))
                 provenance.model_repairs+=1
@@ -220,9 +221,12 @@ class ModelPipeline:
                 except (ValidationError,TypeError): pass
             if assignment.model_dump() not in permitted:
                 raise ValueError("Repair added or changed assignment/evidence/certainty")
-        if repaired.assignments and repaired.guideline_review != DecisionProposal.model_validate(
-                dict(original,dispositions=repaired.model_dump()["dispositions"])).guideline_review:
-            raise ValueError("Repair changed guideline applicability")
+        if repaired.assignments:
+            before={g.source_id:g for g in DecisionProposal.model_validate(
+                dict(original,dispositions=repaired.model_dump()["dispositions"])).guideline_review}
+            # Omitted reviews may be added; an existing assessment is immutable.
+            if {g.source_id:g for g in repaired.guideline_review if g.source_id in before}!=before:
+                raise ValueError("Repair changed guideline applicability")
         levels={"low":0,"moderate":1,"high":2}
         before=original.get("confidence",{}).get("level","low")
         if levels[repaired.confidence.level]>levels.get(before,0):
@@ -286,8 +290,17 @@ class ModelPipeline:
             elif disposition.assignment_code is not None:
                 raise ValueError("Non-coded disposition cannot claim assignment")
         reviews={g.source_id:g for g in proposal.guideline_review}
-        if len(reviews)!=len(proposal.guideline_review) or set(reviews)!=set(self.offline.guidelines)|set(self.offline.expanded_guidelines):
-            raise ValueError("All supplied guidelines require review")
+        required=set(self.offline.guidelines)|set(self.offline.expanded_guidelines)
+        if len(reviews)!=len(proposal.guideline_review) or set(reviews)-required:
+            raise ValueError("Guideline review has duplicate or unknown IDs")
+        missing=required-set(reviews)
+        if missing and proposal.assignments:
+            raise ReconciliationFailure("Guideline review omits loaded guideline IDs; add only the missing assessments "
+                                        "without changing assignments or existing assessments")
+        if missing:
+            # A refusal needs no authorization; the gap stays unknown, never inapplicable.
+            warning=f"Model omitted {len(missing)} guideline reviews; treated as unknown, not as inapplicable"
+            if warning not in proposal.warnings: proposal.warnings.append(warning)
         for review in reviews.values():
             for requirement in review.requirements:
                 if requirement.source.source_type!="guideline" or requirement.source.source_id!=review.source_id:

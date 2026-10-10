@@ -62,3 +62,12 @@ No-key fixture evaluation executed on 2026-10-10: development 5/7 rubric matches
 held-out 2/3, all ten records accounted for and unresolved. Both scoring runs
 returned exit 1; clinical evaluation has not passed. Live model evaluation skipped
 because credentials/configuration are absent. See `clinical_testing_report.md`.
+
+Live Gemini status (2026-10-10): the earlier HTTP 404 was a retired model ID
+(`gemini-2.5-flash`), not an adapter fault. With current model IDs both stages
+complete. Prompt `two-stage-v3` states the output accounting contract; omitted
+guideline reviews are handled locally without relaxing assignment gates. Single
+live runs: two fixtures coded, eight refused, held-out 2/3 rubric matches with
+E09 refused. Compose now forwards optional model variables. Suite: 220 passed,
+1 skipped. See `clinical_testing_report.md` and `gemini.md`. Free-tier quota
+limited every run; no clinical accuracy claim is made.

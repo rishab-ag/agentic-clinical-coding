@@ -42,3 +42,37 @@ run, configure actual exported `OPENAI_API_KEY`, `OPENAI_MODEL` and
 automatically loaded. Do not expose credentials in terminal output or Git.
 Guideline drafts and external proposals remain unverified. No new Docker run
 was needed; previous Docker execution checks remain recorded separately.
+
+## Live Gemini evaluation (2026-10-10, prompt `two-stage-v3`)
+
+Free-tier quota (20 requests per model bucket per day) prevented a single-model
+batch run, so notes were run one at a time. Results below are single runs against
+the same ten fixtures; they are small-sample observations, not accuracy estimates.
+
+| Note | Split | Model | Status | Rubric | Refusal reason recorded |
+| --- | --- | --- | --- | --- | --- |
+| E01 | development | gemini-3.6-flash | coded (AA30, definitive) | not scored by the runner | — |
+| E02 | development | gemini-3-flash-preview | unresolved | fail | guideline review incomplete |
+| E03 | development | gemini-3-flash-preview | coded | pass | — |
+| E04 | development | gemini-3-flash-preview | unresolved | pass | unknown guideline applicability |
+| E05 | development | gemini-3-flash-preview | unresolved | pass | unresolved finding blocks high confidence |
+| E06 | development | gemini-3-flash-preview | unresolved | pass | guideline review incomplete |
+| E07 | development | gemini-3-flash-preview | unresolved | pass | guideline review incomplete |
+| E08 | held out | gemini-3-flash-preview | unresolved | pass | unknown guideline applicability |
+| E09 | held out | gemini-3-flash-preview | unresolved | fail | required evidence not met |
+| E10 | held out | gemini-3-flash-preview | unresolved | pass | guideline quote not grounded |
+
+E01 was observed coded through a diagnostic wrapper around the same pipeline, with
+no repair; a later runner batch on that model returned HTTP 429 for all seven
+notes and is not a model result. E02's failure is the same exact-string
+discriminator predicate that fails offline. E09 requires `coded` with CA22; the
+validator refused the proposal and the cause was not investigated, to avoid tuning
+on a held-out note. No assignment in any run carried a forbidden code.
+
+Three of six development replies from `gemini-3-flash-preview` omitted some of
+the 45 guideline reviews. After those runs, validation was changed so that a
+refusal with omitted reviews keeps the model's dispositions and records the gap
+as unknown, and a proposed assignment with omitted reviews receives the single
+permitted repair, which may add missing assessments but not alter existing ones.
+That change is covered by dummy-record unit tests only; development notes were
+not rerun after it because quota was exhausted. The held-out notes ran after it.

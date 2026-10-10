@@ -176,3 +176,28 @@ def test_guideline_invalid_offset_is_still_rejected_despite_matching_quote(data)
     pipeline=ModelPipeline(data,FakeModel())
     with pytest.raises(ValueError,match='offsets invalid'):
         source_evidence(Evidence(source_type='guideline',source_id='S0',source_quote='NONCLINICAL SOURCE TEXT',start=1,end=22),pipeline.offline,record().note)
+
+def test_refusal_with_omitted_guideline_reviews_keeps_model_dispositions(data):
+    refused=decision();refused['guideline_review']=refused['guideline_review'][:3]
+    model=RepairModel(refused,decision())
+    result=ModelPipeline(data,model).process(record())
+    assert result.status=='unresolved' and not result.assignments and len(model.calls)==2
+    assert result.findings[0].reason=='Nonclinical dummy rubric'
+    assert 'Model omitted 42 guideline reviews; treated as unknown, not as inapplicable' in result.warnings
+
+def test_assignment_with_omitted_reviews_gets_one_additive_repair(data):
+    bad=decision(True);bad['guideline_review']=bad['guideline_review'][:3]
+    model=RepairModel(bad,decision(True))
+    result=ModelPipeline(data,model).process(record())
+    assert result.status=='coded' and result.provenance.model_repairs==1 and len(model.calls)==3
+
+@pytest.mark.parametrize('change',['existing_changed','added_unknown','still_missing'])
+def test_omitted_review_repair_cannot_change_or_skip_applicability(data,change):
+    bad=decision(True);bad['guideline_review']=bad['guideline_review'][:3]
+    fixed=decision(True)
+    if change=='existing_changed': fixed['guideline_review'][1]['applicability']='met'
+    elif change=='added_unknown': fixed['guideline_review'][10]['applicability']='unknown'
+    else: fixed['guideline_review']=fixed['guideline_review'][:3]
+    model=RepairModel(bad,fixed)
+    result=ModelPipeline(data,model).process(record())
+    assert result.status=='unresolved' and not result.assignments and len(model.calls)==3

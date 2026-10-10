@@ -4,7 +4,8 @@ Docker Compose's default is a finite no-key example job, not a web server. The
 image copies only app/data/examples and requirements, installs pinned dependencies,
 and runs as UID 10001. It does not copy `.env`, Git history, host input records,
 virtual environments or output. Compose mounts `./input` read-only at `/in` and
-passes no model environment variables. Both TTY and interactive stdin are disabled.
+passes the optional model variables named in `compose.yaml` only when they are set
+on the host or in an untracked `./.env`; a clean clone has neither and runs offline. Both TTY and interactive stdin are disabled.
 Container output is JSONL; diagnostic logs go to stderr. Compose `up` itself adds
 log prefixes; use `run` when piping results. Build requires network access, runtime
 requires no downloads. The Python base tag is not digest-pinned; full bit-for-bit
@@ -31,10 +32,12 @@ You can override the input bind mount for an existing host directory:
 docker compose run --rm -v "$PWD/examples:/in:ro" app --input /in/messy_note.txt
 ```
 
-To use the optional model in a container, explicitly pass exported variables:
+To use the optional model in a container, export the provider variables (or put
+them in an untracked `./.env`, which Compose reads); `compose.yaml` forwards them:
 
 ```sh
-docker compose run --rm -e OPENAI_API_KEY -e OPENAI_MODEL -e OPENAI_CONTEXT_LIMIT app --input /in/example.jsonl
+docker compose run --rm app --input /in/example.jsonl
+docker compose run --rm app --input /in/example.jsonl --no-model   # force offline
 ```
 
 This is opt-in and requires the original-note/corpus context to fit. It is not

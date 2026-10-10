@@ -2,6 +2,22 @@ services:
   app:
     build: .
     command: ["--input", "examples/messy_note.txt"]
+    # Passed through only when set on the host (or in ./.env); unset means offline mode.
+    environment:
+      - MODEL_PROVIDER
+      - GEMINI_API_KEY
+      - GEMINI_MODEL
+      - GEMINI_CONTEXT_LIMIT
+      - GEMINI_MAX_OUTPUT_TOKENS
+      - GEMINI_TIMEOUT_SECONDS
+      - GEMINI_RETRIES
+      - OPENAI_API_KEY
+      - OPENAI_MODEL
+      - OPENAI_CONTEXT_LIMIT
+      - OPENAI_MAX_OUTPUT_TOKENS
+      - OPENAI_TIMEOUT_SECONDS
+      - OPENAI_RETRIES
+      - CLINICAL_CONCURRENCY
     volumes:
       - ./input:/in:ro
     stdin_open: false

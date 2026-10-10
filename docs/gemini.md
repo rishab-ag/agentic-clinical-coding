@@ -34,12 +34,12 @@ must not be used as a Gemini key. Explicit provider selection avoids ambiguity
 when both keys are present. With no selected-provider key, processing remains
 offline. `--no-model` always forces offline processing.
 
-For Docker, explicitly pass exported variables (Compose does not pass them by
-default):
+For Docker, `compose.yaml` forwards these variables when they are exported or
+present in an untracked `./.env`; unset variables leave the container offline:
 
 ```sh
 docker compose build
-docker compose run --rm -e MODEL_PROVIDER -e GEMINI_API_KEY -e GEMINI_MODEL -e GEMINI_CONTEXT_LIMIT app --input /in/example.jsonl
+docker compose run --rm app --input /in/example.jsonl
 ```
 
 Wire format follows [Google's structured-output REST documentation](https://ai.google.dev/gemini-api/docs/generate-content/structured-output?hl=en):
@@ -156,3 +156,22 @@ and safety blocks. The ignored local `.env` output budget was increased from
 4096 to 16384 to accommodate full-corpus output and model thinking; this is not
 a guarantee of success or a claim that truncation was the established cause.
 Reload `.env` before retrying. No assignment was accepted in that verification.
+
+## HTTP 404 on a listed model, and free-tier quota (2026-10-10)
+
+`gemini-2.5-flash` appears in the `models` listing for this key with
+`generateContent` support, but a minimal non-clinical request returns HTTP 404
+with the API message that the model "is no longer available to new users". The
+listing is therefore not proof that a model accepts requests. The `2.5-flash-lite`
+and `2.5-pro` IDs returned the same 404. Current IDs that accepted the adapter's
+exact request shape (`responseMimeType` plus `responseJsonSchema`) on that date:
+`gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3-flash-preview`,
+`gemini-3.5-flash-lite` and `gemini-3.1-flash-lite`.
+
+The free tier reported a limit of 20 `generateContent` requests per day per
+model bucket; `gemini-3.5-flash` was counted against the `gemini-3.6-flash`
+bucket. A note costs two requests, or three with a repair, so one bucket covers
+fewer than ten notes a day. HTTP 429 and 503 are refused per note as unresolved;
+they are availability failures, not model judgments. A report in which every
+note shows `Gemini HTTP request failed (status 429)` is the offline baseline, not
+a model evaluation.
