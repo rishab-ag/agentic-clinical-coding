@@ -78,3 +78,10 @@ External expansion (2026-10-10): `1B71` activated after an AI-performed WHO sour
 check requested by the owner; the skin-referral excerpt stays pending (review
 draft, no reuse terms). Expanded codes remain unresolved candidates only. No
 independent human review occurred. Suite: 221 passed, 1 skipped.
+
+Final state (2026-10-10): a Gemini key alone now configures a usable model with
+workable output and timeout budgets. `4A44.2` (giant cell arteritis) added as a
+second expanded candidate; WHO's JA20 was not added because the supplied
+catalogue uses that code for another condition. Two recall changes were tried
+and reverted after a wrong code was observed on the smaller model; see
+`clinical_testing_report.md`. Suite: 225 passed, 1 skipped.

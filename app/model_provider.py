@@ -159,6 +159,9 @@ class OpenAIModel:
             self.sleep(min(0.5 * 2 ** attempt, 2))
 
 
+GEMINI_DEFAULTS = ("gemini-3.5-flash-lite", "1048576")
+
+
 def model_from_environment():
     provider=os.environ.get("MODEL_PROVIDER","").strip().lower() or (
         "gemini" if os.environ.get("GEMINI_API_KEY", "").strip() and not os.environ.get("OPENAI_API_KEY", "").strip() else "openai")
@@ -168,10 +171,13 @@ def model_from_environment():
     key = os.environ.get(prefix+"_API_KEY", "").strip()
     if not key:
         return None
-    config=ModelConfig(api_key=key,model=os.environ.get(prefix+"_MODEL", "").strip(),
-        context_limit=int(os.environ.get(prefix+"_CONTEXT_LIMIT", "0")),
-        max_output_tokens=int(os.environ.get(prefix+"_MAX_OUTPUT_TOKENS", "4096")),
-        timeout=float(os.environ.get(prefix+"_TIMEOUT_SECONDS", "30")),
+    # A Gemini key alone is enough to run; the limit is that model's published input window.
+    # Stage 2 returns an assessment per guideline, so the output and time budgets are generous.
+    model,limit=GEMINI_DEFAULTS if provider=="gemini" else ("","0")
+    config=ModelConfig(api_key=key,model=os.environ.get(prefix+"_MODEL", "").strip() or model,
+        context_limit=int(os.environ.get(prefix+"_CONTEXT_LIMIT", "").strip() or limit),
+        max_output_tokens=int(os.environ.get(prefix+"_MAX_OUTPUT_TOKENS", "").strip() or "16384"),
+        timeout=float(os.environ.get(prefix+"_TIMEOUT_SECONDS", "").strip() or "120"),
         retries=int(os.environ.get(prefix+"_RETRIES", "1")),
         concurrency=int(os.environ.get("CLINICAL_CONCURRENCY", "1")))
     if provider=="gemini":

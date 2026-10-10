@@ -16,9 +16,11 @@ TXT, JSON, JSONL or CSV, preferably with `note_id` and `text` fields
 ([input contract](docs/input_output_contract.md)). Output is one JSON object per note on
 stdout; logs go to stderr.
 
-A model is optional. Export `GEMINI_API_KEY`, `GEMINI_MODEL` and `GEMINI_CONTEXT_LIMIT` (or
-the `OPENAI_` equivalents) and Compose forwards them ([setup](docs/gemini.md)). **Without a
-key the pipeline still runs end to end, but every note is returned `unresolved`.**
+A model is optional. Export `GEMINI_API_KEY` and Compose forwards it; `GEMINI_MODEL`
+overrides the default `gemini-3.5-flash-lite`, and a stronger model is recommended
+([setup](docs/gemini.md)). OpenAI needs `OPENAI_API_KEY`, `OPENAI_MODEL` and
+`OPENAI_CONTEXT_LIMIT`; that path has mocked tests only. **Without a key the pipeline still
+runs end to end, but every note is returned `unresolved`.**
 
 ## What is implemented
 
@@ -58,23 +60,30 @@ Each result carries `status`, `assignments`, `findings`, `candidates_considered`
 
 ## Added data
 
-`1B71 | Necrotising fasciitis` (`http://id.who.int/icd/entity/522973276`), from WHO's
-[reference guide](https://icdcdn.who.int/icd11referenceguide/en/refguide.pdf) (PDF page 342)
-and [ICD-11 MMS 2026-01 release table](https://icdcdn.who.int/static/releasefiles/2026-01/SimpleTabulation-ICD-11-MMS-en.zip),
-under CC BY-ND 3.0 IGO. GDL-032 describes a necrotising infection that no supplied title
-names. It lives in `data/expanded/proposals.json`, apart from the supplied files, and is
-never assigned: a matching note returns `unresolved` with `1B71` as a sourced candidate.
-The source check was done by the AI assistant, not an independent reviewer
-([details](docs/expansion_review.md)).
+Two WHO codes for conditions the guidelines describe but no supplied title names:
+
+- `1B71 | Necrotising fasciitis` (`http://id.who.int/icd/entity/522973276`), for GDL-032.
+- `4A44.2 | Giant cell arteritis` (`http://id.who.int/icd/entity/1929970386`), for GDL-014.
+
+Source: WHO's [ICD-11 MMS 2026-01 release table](https://icdcdn.who.int/static/releasefiles/2026-01/SimpleTabulation-ICD-11-MMS-en.zip)
+and, for `1B71`, the [reference guide](https://icdcdn.who.int/icd11referenceguide/en/refguide.pdf)
+(PDF page 342), under CC BY-ND 3.0 IGO. They live in `data/expanded/proposals.json`, apart
+from the supplied files, and are never assigned: a matching note returns `unresolved` with
+the code as a sourced candidate. A third gap was not filled: WHO's code for chronic
+hypertension in pregnancy is `JA20`, which the supplied catalogue already uses for
+"Spontaneous abortion". The source checks were done by the AI assistant, not an independent
+reviewer ([details](docs/expansion_review.md)).
 
 ## What holds on new notes, and what does not
 
 Holds: one result per record, quote grounding, supplied-only assignments, instruction
 quarantine, refusal when the diagnosis is outside the catalogue.
 
-Does not: coding recall. The validator refuses more than it should: in single live runs on
-ten fixtures at most two were coded, and an imaging-confirmed pneumonia was refused. Results
-vary between runs on the smaller model ([testing report](docs/clinical_testing_report.md)).
+Does not: coding recall, and correctness of an accepted code. The validator refuses more
+than it should: in live runs on ten fixtures at most two were coded. It checks grounding,
+not clinical choice: the smaller model once coded an organism-unidentified pneumonia as
+bacterial pneumonia, and results vary between runs
+([testing report](docs/clinical_testing_report.md)).
 
 ## Not built, and next
 

@@ -49,6 +49,53 @@
       }
     },
     {
+      "entry_id": "EXT-ICD-GCA",
+      "kind": "catalogue",
+      "catalogue_origin": "expanded",
+      "code": "4A44.2",
+      "title": "Giant cell arteritis",
+      "chapter": "Diseases of the immune system",
+      "synonyms": [],
+      "text": null,
+      "icd_uri": "http://id.who.int/icd/entity/1929970386",
+      "source": {
+        "url": "https://icdcdn.who.int/static/releasefiles/2026-01/SimpleTabulation-ICD-11-MMS-en.zip",
+        "publisher": "World Health Organization",
+        "accessed_date": "2026-10-10",
+        "version": "ICD-11 MMS release 2026-01 (WHO SimpleTabulation file, version line \"2026 Jan 17 - 05:30 UTC\")",
+        "locator": "SimpleTabulation-ICD-11-MMS-en.txt, row with Foundation URI http://id.who.int/icd/entity/1929970386; Code and Title columns (the file prefixes titles with hierarchy dashes)",
+        "fragment": "4A44.2 Giant cell arteritis",
+        "fragment_sha256": "90a45f1d71fa33fd4379af667d8067bd72c4e7cef1872617f2208ab8887634f0",
+        "license_url": "https://icd.who.int/en/docs/ICD11-license.pdf",
+        "attribution_note": "International Classification of Diseases, Eleventh Revision (ICD-11), World Health Organization. Licensed under CC BY-ND 3.0 IGO. Code, title and URI reproduced verbatim and unmodified; no WHO endorsement. Chapter title is WHO text; all other fields in this record are additions that do not originate from WHO.",
+        "fetched_facts": [
+          "The WHO release table lists code 4A44.2, title \"Giant cell arteritis\", Foundation URI http://id.who.int/icd/entity/1929970386, ChapterNo 04, parent 4A44 \"Vasculitis\" (downloaded archive SHA-256 f1356588f40953a83e3af2b662deab47c5e269f944d1ea4ed0cfeb2007c7cd39).",
+          "The same file titles chapter 04 \"Diseases of the immune system\".",
+          "The WHO licence sections 1.2.2-1.2.3 allow incorporation into software when code, title and URI are kept with attribution."
+        ],
+        "unverified_facts": [
+          "No independent human or clinical review: the source check was performed by an AI coding assistant at the repository owner's instruction.",
+          "Clinical applicability to any note is not established by this record; it can only appear as an unresolved expanded candidate.",
+          "The supplied catalogue uses the parent code 4A44 for \"Systemic lupus erythematosus\", which differs from WHO's 4A44 \"Vasculitis\"; no hierarchy between the supplied 4A44 and this entry is implied.",
+          "The WHO browser entity page and the Reference Guide were not checked for this code."
+        ]
+      },
+      "reason": "GDL-014 routes a described presentation to a large-vessel vasculitis pathway; no supplied catalogue title names this condition. Proposal only, not a coding rule.",
+      "linked_supplied_guideline_ids": [
+        "GDL-014"
+      ],
+      "review_status": "human_approved",
+      "review": {
+        "reviewer": "Claude Code (AI assistant), at the repository owner's instruction; not an independent human review",
+        "reviewed_at": "2026-10-10",
+        "payload_sha256": "c17352a2609ba0178145dd81c0b89f6c01e3a1b051649b19dc697760f2d7449f",
+        "exact_mapping_checked": true,
+        "source_checked": true,
+        "reuse_permission_checked": true,
+        "note": "Code, title, URI and chapter read from the WHO 2026-01 release table downloaded on the review date; licence sections 1.2.2-1.2.3 read. Status value human_approved is the manifest activation state, not a claim of human clinical sign-off."
+      }
+    },
+    {
       "entry_id": "EXT-GUIDE-SKIN-REFERRAL",
       "kind": "guideline",
       "catalogue_origin": "expanded",

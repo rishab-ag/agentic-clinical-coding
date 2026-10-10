@@ -39,10 +39,10 @@ def test_actual_manifest_activates_only_the_source_checked_code():
     supplied=load_supplied_data()
     manifest,digest=load_expansion(supplied)
     assert {e.entry_id:e.review_status for e in manifest.entries}=={
-        'EXT-ICD-NF':'human_approved','EXT-GUIDE-SKIN-REFERRAL':'pending_human_review'}
+        'EXT-ICD-NF':'human_approved','EXT-ICD-GCA':'human_approved','EXT-GUIDE-SKIN-REFERRAL':'pending_human_review'}
     pipeline=NoKeyPipeline(supplied)
-    assert list(pipeline.expanded_catalogue)==['1B71'] and pipeline.expanded_guidelines=={}
-    assert '1B71' not in pipeline.catalogue
+    assert sorted(pipeline.expanded_catalogue)==['1B71','4A44.2'] and pipeline.expanded_guidelines=={}
+    assert not set(pipeline.expanded_catalogue)&set(pipeline.catalogue)
     assert pipeline.provenance().expansion_sha256==digest
 
 @pytest.mark.parametrize('kind',['catalogue','guideline'])

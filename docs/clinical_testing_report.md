@@ -105,3 +105,22 @@ note and two held-out notes. The prompt now requires sentence-form reasons; this
 was confirmed on `examples/messy_note.txt` only. Fixtures were not rerun after
 that wording change. A keyed `docker compose run` on the example note completed
 in model mode and emitted schema-valid JSONL.
+
+### Unseen synthetic notes and a wrong code (2026-10-10)
+
+An eight-note synthetic file without reviewed labels was run several times on
+`gemini-3.5-flash-lite`. Refusals on the out-of-catalogue, early-pregnancy
+hypertension and suspected-diagnosis notes were stable across runs, and an
+instruction embedded in one note was never followed. A plain acute otitis media
+note was coded in two of eight runs and otherwise refused, each time for a
+different accounting reason. A pneumonia note stating that no organism was
+identified was returned as provisional CA22 in three runs, refused in one, and
+in one run coded definitively as CA23 (bacterial pneumonia), which the note does
+not support. The validator checks grounding and accounting; it cannot detect a
+clinically wrong choice between two supplied codes.
+
+Two changes aimed at the accounting refusals were tried in that last pair of
+runs and reverted: removing citations of guidance the model itself assessed as
+not applicable, and prompt wording clarifying that untrusted text remains valid
+clinical evidence. They produced no measurable gain, and making acceptance
+easier on a model this variable also admits more wrong assignments.

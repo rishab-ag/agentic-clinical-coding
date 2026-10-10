@@ -1,6 +1,6 @@
 # Milestone 7 external source review packet
 
-Access date: 2026-10-10. **Current state:** `1B71` is active after an AI-performed
+Access date: 2026-10-10. **Current state:** `1B71` and `4A44.2` are active after an AI-performed
 source check requested by the repository owner; the skin-referral excerpt remains
 `pending_human_review` and out of retrieval. No entry has independent human or
 clinical approval; see "Source check and activation" below. Source observations
@@ -86,9 +86,6 @@ Missing or unknown external review blocks assignments. Invalid expansion data is
 excluded with a warning; it cannot replace supplied entries. No runtime network
 fetch is introduced. JSONL output cannot overwrite the expansion directory.
 
-Stop for independent review here. Milestone 8 has not been implemented. Milestone 3
-clinical approval remains deferred; clinical accuracy is unscored.
-
 ## Source check and activation (2026-10-10)
 
 Performed by Claude Code at the repository owner's instruction, by downloading the
@@ -100,6 +97,17 @@ the loader requires; the `review.reviewer` field records who actually checked.
 | --- | --- | --- | --- | --- |
 | 1B71 | Necrotising fasciitis | [WHO Reference Guide](https://icdcdn.who.int/icd11referenceguide/en/refguide.pdf#page=342); [ICD-11 MMS 2026-01 release table](https://icdcdn.who.int/static/releasefiles/2026-01/SimpleTabulation-ICD-11-MMS-en.zip) | Guide PDF page 342 shows the exact pair. The release table lists code 1B71, this title, Foundation URI `http://id.who.int/icd/entity/522973276`, chapter 01 "Certain infectious or parasitic diseases", parent block "Pyogenic bacterial infections of the skin or subcutaneous tissues". The [WHO licence](https://icd.who.int/en/docs/ICD11-license.pdf) sections 1.2.2-1.2.3 allow software incorporation with code, title and URI under CC BY-ND 3.0 IGO. | Independent human or clinical review; the WHO browser page itself; applicability to any note. |
 | — | WHO skin disease classification: urgent referral excerpt | [WHO skin classification](https://cdn.who.int/media/docs/default-source/ntds/skin-ntds/common-skin-diseases-for-managemen-or-referral-at-primary-health-care-level.pdf#page=12) | PDF page 12 contains the quoted sentence in the necrotising-fasciitis urgent-referral row. The cover reads "Version 1.0" and "For external expert review draft". | Final publication status; reuse terms (none found in the 45-page PDF); clinical applicability. **Not activated.** |
+
+| 4A44.2 | Giant cell arteritis | [ICD-11 MMS 2026-01 release table](https://icdcdn.who.int/static/releasefiles/2026-01/SimpleTabulation-ICD-11-MMS-en.zip) | The release table lists code 4A44.2, this title, Foundation URI `http://id.who.int/icd/entity/1929970386`, chapter 04 "Diseases of the immune system", parent 4A44 "Vasculitis". Same licence terms. Linked to GDL-014. | Independent human or clinical review; the WHO browser page and Reference Guide; applicability to any note. |
+
+**Not added: chronic hypertension in pregnancy (GDL-028).** WHO's release table
+gives JA20 "Pre-existing hypertension complicating pregnancy, childbirth or the
+puerperium" (`http://id.who.int/icd/entity/183230446`). The supplied catalogue
+already uses JA20 for "Spontaneous abortion", so the loader rejects it as a
+collision and the supplied meaning stands. Likewise the supplied 4A44 is
+"Systemic lupus erythematosus" while WHO's 4A44 is "Vasculitis"; 4A44.2 is
+recorded without implying any hierarchy with the supplied 4A44. These are two
+more supplied-versus-WHO conflicts, documented and not rewritten.
 
 Downloaded-file SHA-256 values are recorded in the manifest's `fetched_facts`.
 Expanded entries are now ranked in one index with the supplied catalogue and

@@ -106,3 +106,15 @@ def test_socket_timeout_is_bounded_and_accounts_for_latency(retry_count):
     assert 'NONCLINICAL_UNTRUSTED_EXCEPTION' not in str(error.value)
     assert error.value.retries==retry_count and error.value.latency_ms>0
     assert len(calls)==retry_count+1
+
+
+def test_gemini_key_alone_configures_a_usable_model(monkeypatch):
+    from app.model_provider import model_from_environment, GEMINI_DEFAULTS
+    for name in ('MODEL_PROVIDER','OPENAI_API_KEY','GEMINI_MODEL','GEMINI_CONTEXT_LIMIT','GEMINI_MAX_OUTPUT_TOKENS','GEMINI_TIMEOUT_SECONDS','GEMINI_RETRIES'):
+        monkeypatch.delenv(name,raising=False)
+    monkeypatch.setenv('GEMINI_API_KEY','NONSECRET_DUMMY_KEY')
+    config=model_from_environment().config
+    assert (config.model,str(config.context_limit))==GEMINI_DEFAULTS
+    assert config.max_output_tokens==16384 and config.timeout==120
+    monkeypatch.setenv('GEMINI_MODEL','dummy-model');monkeypatch.setenv('GEMINI_MAX_OUTPUT_TOKENS','')
+    assert model_from_environment().config.model=='dummy-model'

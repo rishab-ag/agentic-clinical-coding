@@ -5,7 +5,10 @@ stdlib HTTPS, a fixed Google generateContent endpoint and an `x-goog-api-key`
 header; keys are never placed in URLs or logged. Local Pydantic/source-evidence
 validation remains authoritative. No clinical labels or approval flags changed.
 
-In your ignored `.env`, configure these variables:
+`GEMINI_API_KEY` alone is enough: the model defaults to `gemini-3.5-flash-lite`
+with its published 1,048,576-token input limit, a 16,384-token output budget and
+a 120-second timeout. The smaller earlier defaults (4,096 tokens, 30 seconds)
+truncated Stage 2 replies. Every value below can still be set explicitly:
 
 ```dotenv
 MODEL_PROVIDER=gemini
