@@ -193,6 +193,14 @@ class ModelPipeline:
             if 'proposal' in locals() and proposal is not None:
                 result.unresolved.extend(proposal.unresolved)
             result.warnings.append("Validation failed; source uncertainty retained")
+            if isinstance(error,ModelFailure):
+                result.unresolved.append(str(error))
+            if isinstance(error,WireFailure):
+                for issue in error.errors:
+                    location=".".join(str(part) for part in issue.get("location",[])) or "<root>"
+                    result.unresolved.append(f"Schema validation: {location}: {issue['type']}")
+                    if issue.get("value_type"):
+                        result.unresolved.append(f"Schema fact value representation: {issue['value_type']}")
             if isinstance(error,(ValueError,WireFailure)) and not isinstance(error,ValidationError):
                 result.unresolved.append(str(error))
             return result
@@ -255,7 +263,10 @@ class ModelPipeline:
         except ValidationError as error:
             # Exclude arbitrary untrusted inputs from error summaries.
             raise WireFailure(deepcopy(reply.payload),[
-                dict(location=list(e["loc"]),type=e["type"]) for e in error.errors()]) from None
+                dict(location=(list(e["loc"][:-1])+["<unexpected field>"] if e["type"]=="extra_forbidden" else list(e["loc"])),
+                     type=e["type"],value_type=(type(e["input"].get("value")).__name__
+                        if e["type"]=="value_error" and isinstance(e.get("input"),dict) and "value" in e["input"] else None))
+                for e in error.errors()]) from None
 
     def _validate(self,proposal,extraction,note,facts):
         findings={f.finding_id:f for f in extraction.findings}
@@ -271,7 +282,7 @@ class ModelPipeline:
                 if disposition.assignment_code not in assignments:
                     raise ValueError("Coded/subsumed disposition lacks assignment")
                 if disposition.finding_id not in assignments[disposition.assignment_code].finding_ids:
-                    raise ValueError("Coded finding is not assignment-linked")
+                    raise ReconciliationFailure("Coded/subsumed finding is not assignment-linked; correct dispositions without changing assignments")
             elif disposition.assignment_code is not None:
                 raise ValueError("Non-coded disposition cannot claim assignment")
         reviews={g.source_id:g for g in proposal.guideline_review}

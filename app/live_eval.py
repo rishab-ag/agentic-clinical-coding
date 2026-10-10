@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 
 from app.data import load_supplied_data
@@ -15,6 +16,7 @@ def main(argv=None):
     parser.add_argument("--live",action="store_true")
     parser.add_argument("--fixtures",type=Path,default=DEFAULT_FIXTURES)
     parser.add_argument("--split",choices=["development","held_out"],default="development")
+    parser.add_argument("--note-id",help="Run one approved note in the selected split for diagnosis")
     args=parser.parse_args(argv)
     reason=None
     if not args.live:
@@ -33,6 +35,10 @@ def main(argv=None):
         data=load_supplied_data()
         fixtures=load_fixtures(args.fixtures,data)
         approved=[f for f in fixtures.fixtures if f.review_status=="human_approved" and f.split==args.split]
+        if args.note_id:
+            approved=[f for f in approved if f.note_id==args.note_id]
+            if not approved:
+                raise ValueError("Requested note is not approved in selected split")
         if not approved:
             print(json.dumps(dict(type="live_evaluation",status="skipped",reason="No human-approved fixtures in selected split",model_calls=0)))
             return 0
@@ -40,15 +46,22 @@ def main(argv=None):
         model=model_from_environment()
         pipeline=ModelPipeline(data,model)
         position=0
+        diagnostics=[]
         def decide(note):
             nonlocal position
             position+=1
-            return pipeline.process(InputRecord(note=note,position=position,
+            result=pipeline.process(InputRecord(note=note,position=position,
                 original_record={"note_id":note.note_id,"text":note.text}))
+            diagnostics.append(dict(note_id=note.note_id,status=result.status,
+                provenance=result.provenance.model_dump(),unresolved=result.unresolved))
+            return result
         report=evaluate_callable(approved,decide,data)
         report["evaluation_kind"]="live_model_against_human_rubric"
         report["split"]=args.split
+        report["model_diagnostics"]=diagnostics
         print(json.dumps(report))
+        print(f"Live evaluation: {report['metrics']['rubric_matches']}/{len(approved)} rubrics matched; "
+              f"{'passed' if report['passed'] else 'failed'}. Details are in stdout JSON, including model_diagnostics.",file=sys.stderr)
         return 0 if report["passed"] else 1
     except (OSError,ValueError):
         print(json.dumps(dict(type="live_evaluation",status="error",reason="Invalid fixture/model configuration")))

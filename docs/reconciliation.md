@@ -42,3 +42,12 @@ pending approval. Milestone 3 remains deferred, not passed. Live inference and
 clinical accuracy are untested. A review caught that the initial validator checked
 each numeric condition separately, losing any-group semantics; this milestone
 uses the group evaluator instead. No clinical-correctness claim follows from tests.
+
+A live Gemini response exposed a structural repair classification gap: an
+unlinked coded/subsumed disposition raised a generic ValueError, so the permitted
+repair never ran. It now raises ReconciliationFailure. One repair may correct
+dispositions or refuse, but cannot add/change assignments, linked finding IDs,
+quotes, assertions or clinical certainty. Full original-source validation still
+runs afterward. Dummy regressions cover preserving an unlinked finding as
+unresolved and rejecting repairs that expand assignment links to suspected
+findings. No fixture-specific medical rule was introduced.

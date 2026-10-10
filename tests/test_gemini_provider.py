@@ -19,7 +19,9 @@ def test_gemini_request_contract_and_usage():
     assert 'NONSECRET_DUMMY' not in request.full_url and 'NONSECRET_DUMMY' not in str(body)
     assert request.get_header('X-goog-api-key')=='NONSECRET_DUMMY'
     assert body['systemInstruction']['parts'][0]['text']=='trusted dummy'
-    assert body['generationConfig']['responseFormat']['text']['mimeType']=='application/json'
+    assert body['generationConfig']['responseMimeType']=='application/json'
+    assert body['generationConfig']['responseJsonSchema']=={'type':'object'}
+    assert 'responseFormat' not in body['generationConfig']
 
 @pytest.mark.parametrize('finish',['MAX_TOKENS','SAFETY','RECITATION'])
 def test_incomplete_or_refused_output_never_accepted(finish):
@@ -81,3 +83,26 @@ def test_gemini_two_stage_pipeline_and_single_repair(data,repair):
     assert len(calls)==2+int(repair)
     stage_two=json.loads(calls[1]['contents'][0]['parts'][0]['text'].split('\n',1)[1].rsplit('\n',1)[0])
     assert len(stage_two['supplied_catalogue'].splitlines())==404 and len(stage_two['guidelines'])==45
+
+def test_http_400_has_safe_status_and_reason_without_error_body():
+    body=json.dumps({'error':{'message':'SECRET_RESPONSE', 'details':[{'reason':'API_KEY_INVALID'}]}}).encode()
+    def transport(request,timeout):
+        raise HTTPError(request.full_url,400,'SECRET_KEY',{},io.BytesIO(body))
+    model=GeminiModel(ModelConfig('dummy','dummy',1000000),transport=transport)
+    with pytest.raises(ModelFailure) as error:model.extract([],{})
+    assert 'status 400' in str(error.value) and 'API_KEY_INVALID' in str(error.value)
+    assert 'SECRET' not in str(error.value)
+
+@pytest.mark.parametrize('retry_count',[0,1])
+def test_socket_timeout_is_bounded_and_accounts_for_latency(retry_count):
+    import socket
+    calls=[]
+    def transport(request,timeout):
+        calls.append(1)
+        raise socket.timeout('NONCLINICAL_UNTRUSTED_EXCEPTION')
+    model=GeminiModel(ModelConfig('dummy','dummy',1000000,timeout=120,retries=retry_count),transport=transport,sleep=lambda _:None)
+    with pytest.raises(ModelFailure) as error:model.extract([],{})
+    assert 'timed out' in str(error.value)
+    assert 'NONCLINICAL_UNTRUSTED_EXCEPTION' not in str(error.value)
+    assert error.value.retries==retry_count and error.value.latency_ms>0
+    assert len(calls)==retry_count+1

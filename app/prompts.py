@@ -24,7 +24,10 @@ def extraction_messages(note):
 confirmed, suspected, negated, historical, patient-reported and unclear assertions,
 temporality, experiencer and encounter relevance. Extract generic age, sex,
 pregnancy/gestation, duration and tests/results with provenance/certainty; never
-guess missing facts. Differential hypotheses are separate, non-evidentiary terms
+guess missing facts. Numeric age/gestation/duration facts must use JSON numbers,
+with units in the unit field. Do not put phrases such as 'since last night' in a
+known numeric value. If a number cannot be established, keep the fact unknown
+with value null and its original source quote. Differential hypotheses are separate, non-evidentiary terms
 and cannot authorize coding. Preserve every documented finding you identify.""",
         dict(note_id=note.note_id,original_note=note.text,trust_scan=scan_untrusted_text(note.text).model_dump()))
 

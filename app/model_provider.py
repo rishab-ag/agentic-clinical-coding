@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 import json
 import os
 import time
+import socket
 from typing import Any, Protocol
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, build_opener, HTTPRedirectHandler
@@ -45,7 +46,7 @@ class ModelConfig:
     def __post_init__(self):
         if not self.api_key or not self.model or not 1 <= self.concurrency <= 4:
             raise ValueError("Model configuration incomplete or invalid")
-        if not 1 <= self.max_output_tokens < self.context_limit or not 0 < self.timeout <= 60 or not 0 <= self.retries <= 2:
+        if not 1 <= self.max_output_tokens < self.context_limit or not 0 < self.timeout <= 120 or not 0 <= self.retries <= 2:
             raise ValueError("Model bounds invalid")
 
 
@@ -147,7 +148,10 @@ class OpenAIModel:
                 retryable = error.code in (408,409,429) or 500 <= error.code <= 599
                 if not retryable or attempt == self.config.retries:
                     raise failure("OpenAI HTTP request failed") from None
-            except (URLError, TimeoutError):
+            except (socket.timeout,TimeoutError):
+                if attempt == self.config.retries:
+                    raise failure("OpenAI request timed out") from None
+            except URLError:
                 if attempt == self.config.retries:
                     raise failure("OpenAI transport failed") from None
             except (ValueError, KeyError, TypeError, AttributeError):

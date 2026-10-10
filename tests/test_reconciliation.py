@@ -132,3 +132,30 @@ def test_injected_quotes_cannot_authorize_assignments(data,location):
     result=ModelPipeline(data,FakeModel(extract=extracted,decide=proposed)).process(note)
     assert result.status=="unresolved" and not result.assignments
     assert result.warnings
+
+def test_unlinked_coded_disposition_uses_one_bounded_repair(data):
+    extracted=extraction()
+    extra=deepcopy(extracted['findings'][0]);extra['finding_id']='f2';extra['assertion']='unclear'
+    extracted['findings'].append(extra)
+    bad=decision(True)
+    bad['dispositions'].append(dict(finding_id='f2',disposition='coded',reason='NONCLINICAL incorrect accounting',assignment_code='D0'))
+    fixed=deepcopy(bad)
+    fixed['dispositions'][1]=dict(finding_id='f2',disposition='unresolved',reason='NONCLINICAL unlinked finding retained for review',assignment_code=None)
+    model=RepairModel(bad,fixed);model.extraction=extracted
+    result=ModelPipeline(data,model).process(record())
+    assert result.status=='coded' and result.provenance.model_repairs==1
+    assert result.assignments[0].finding_ids==['f1']
+    assert len(result.findings)==2 and result.findings[1].disposition=='unresolved'
+    assert len(model.calls)==3
+
+def test_repair_cannot_add_unconfirmed_finding_to_assignment_links(data):
+    extracted=extraction()
+    extra=deepcopy(extracted['findings'][0]);extra['finding_id']='f2';extra['assertion']='suspected'
+    extracted['findings'].append(extra)
+    bad=decision(True)
+    bad['dispositions'].append(dict(finding_id='f2',disposition='coded',reason='NONCLINICAL incorrect accounting',assignment_code='D0'))
+    fixed=deepcopy(bad);fixed['assignments'][0]['finding_ids'].append('f2')
+    model=RepairModel(bad,fixed);model.extraction=extracted
+    result=ModelPipeline(data,model).process(record())
+    assert result.status=='unresolved' and not result.assignments
+    assert result.provenance.model_repairs==1 and len(model.calls)==3

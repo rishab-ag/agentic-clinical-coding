@@ -1,6 +1,7 @@
 """Model wire contracts exclude application-owned input, hashes and status."""
 from typing import List, Literal, Optional, Union
 import math
+import re
 from pydantic import model_validator, Field
 
 from app.models import (Assignment, Candidate, Confidence, Contract, DifferentialHypothesis,
@@ -19,13 +20,24 @@ class ExtractedFinding(Contract):
 
 class ExtractedFact(Contract):
     kind: Literal["age_years", "sex", "pregnancy_status", "gestational_weeks", "symptom_duration", "test"]
-    value: Union[str, float, bool, None]
+    value: Union[str, float, bool, None] = Field(description="For age_years, gestational_weeks and symptom_duration, use a JSON number, never prose or a number with units. If a numeric value cannot be established, use null and certainty unknown. Units belong in unit. Other kinds may use string/bool values.")
     unit: Optional[str]
     test_name: Optional[str]
     test_result: Optional[str]
     test_date: Optional[str]
     evidence: Evidence
     certainty: Literal["known", "uncertain", "unknown"]
+
+    @model_validator(mode="before")
+    @classmethod
+    def numeric_representation(cls,payload):
+        if isinstance(payload,dict) and payload.get("kind") in ("age_years","gestational_weeks","symptom_duration"):
+            value=payload.get("value")
+            if isinstance(value,str) and re.fullmatch(r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?",value.strip()):
+                numeric=float(value)
+                if math.isfinite(numeric):
+                    return dict(payload,value=numeric)
+        return payload
 
     @model_validator(mode="after")
     def finite_value(self):

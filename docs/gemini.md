@@ -44,7 +44,9 @@ docker compose run --rm -e MODEL_PROVIDER -e GEMINI_API_KEY -e GEMINI_MODEL -e G
 
 Wire format follows [Google's structured-output REST documentation](https://ai.google.dev/gemini-api/docs/generate-content/structured-output?hl=en):
 trusted system instructions are separate from user source content, and the JSON
-schema is sent under `generationConfig.responseFormat.text`. Google supports a
+schema is sent under `generationConfig.responseJsonSchema` with
+`responseMimeType=application/json`, as documented in the
+[generateContent API reference](https://ai.google.dev/api/generate-content?hl=en). Google supports a
 subset of JSON Schema; unsupported model/schema combinations are refused rather
 than silently using unconstrained text. Only a single candidate with `STOP` finish
 reason, output text and actual `usageMetadata.promptTokenCount` is accepted.
@@ -67,3 +69,90 @@ quality, a free-tier guarantee or live evaluation.
 No live Gemini request was made during implementation. Choose the model in AI
 Studio and verify its context/schema support before running development evaluation.
 Keep held-out evaluation for the final frozen configuration.
+
+## Diagnosing a nonzero evaluation exit
+
+A failed rubric returns exit 1; redirection hides the report from the terminal.
+The runner now emits a short stderr summary and includes `model_diagnostics`
+with per-note status, provenance/token usage and sanitized refusal reasons.
+Run one development note before spending quota on the entire batch:
+
+```sh
+python -m app.live_eval --live --split development --note-id E01 > out/gemini-E01.json
+python -m json.tool out/gemini-E01.json
+```
+
+On 2026-10-10, a single-note diagnostic using the saved local configuration
+received HTTP 400 with no model output/token usage. The exact cause was not
+established; raw HTTP responses and keys were not logged. This is not a fixture
+approval problem and not evidence of clinical model performance. The earlier
+seven-case report lacked model diagnostics, so its underlying model failures
+cannot be reconstructed from the rubric scores alone. No held-out live run or
+clinical-label change was made during diagnosis. Your shell's exported environment
+and the agent's process environment are separate; `.env` remains explicitly loaded.
+
+## HTTP 400 request-format fix
+
+A minimal non-clinical probe established that `responseFormat.text.mimeType`
+rejects `application/json`: Google reports that this field is an enum. The
+adapter now uses `responseMimeType` plus `responseJsonSchema`, retaining the
+full local schema validation and evidence gates. The original mocked tests
+missed this API compatibility error; they now assert the corrected wire fields.
+The compatible minimal request encountered HTTP 503 high demand, which is
+a separate service availability issue, not a rubric or approval failure.
+No raw error responses or credentials are logged by the production adapter.
+
+## Slow responses and Python 3.9 timeout accounting
+
+Set `GEMINI_TIMEOUT_SECONDS=120` for slower responses, then reload exported
+variables. The shared configuration permits network timeouts up to 120 seconds;
+30 seconds remains the code default. On Python 3.9, `socket.timeout` can be distinct
+from builtin `TimeoutError`; both are now caught and converted into sanitized
+provider failures with elapsed time and retry counts. Timeout retries remain
+bounded by `GEMINI_RETRIES`, and repair still makes one request with no retries.
+A longer timeout cannot resolve persistent Google overload or guarantee output.
+
+```sh
+set -a
+source .env
+set +a
+python -m app.live_eval --live --split development --note-id E01 > out/gemini-E01.json
+python -m json.tool out/gemini-E01.json
+```
+
+The ignored local `.env` timeout was updated to 120 without displaying or changing
+its key. No live request was made during this timeout fix.
+
+## Stage 1 schema diagnostics and numeric representations
+
+A live E01 response passed HTTP parsing but failed the local fact validator at
+`facts.1`. The live report now names schema locations and error types, without
+logging raw outputs or arbitrary extra-property names. The fact validator rejects
+known numeric facts represented as strings or nonfinite values. To accommodate
+JSON representation differences, plain finite decimal/exponent strings in age,
+gestation or duration facts are normalized to numbers before validation. Units,
+certainty, assertions, note text and evidence are unchanged. Words, unknowns,
+unit-bearing strings and nonfinite representations are not converted into numbers.
+Original-note grounding is still required after normalization. No extraction
+repair or clinical upgrade was introduced.
+
+Full pytest after this change: 208 passed, 1 skipped. The no-key messy-note smoke
+and diff check passed. A one-note live verification is recorded separately; schema
+success is not a claim of clinical correctness or a guaranteed coded output.
+
+The initial numeric representation normalization alone did **not** resolve the
+live response: `facts.1` still failed, with value type `str`. The extraction prompt
+and schema description now explicitly require numeric values without prose/units,
+or null with unknown certainty when no number can be established. A malformed
+or ambiguous fact is not guessed into a numeric value or clinical certainty.
+Schema diagnostics now report only field/type information, redacting arbitrary
+extra-field names. Current full tests: 208 passed, 1 skipped; diff checks passed.
+
+Live verification after the prompt clarification passed Stage 1 (471 actual input
+tokens) and reached Stage 2 (21,099 actual input tokens). Stage 2 returned an
+incomplete/refused response; its exact finish reason was not recorded by the old
+message. The adapter now reports sanitized finish reasons, including MAX_TOKENS
+and safety blocks. The ignored local `.env` output budget was increased from
+4096 to 16384 to accommodate full-corpus output and model thinking; this is not
+a guarantee of success or a claim that truncation was the established cause.
+Reload `.env` before retrying. No assignment was accepted in that verification.

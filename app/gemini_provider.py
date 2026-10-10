@@ -3,6 +3,7 @@ from dataclasses import replace
 import json
 import re
 import time
+import socket
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, build_opener
 from app.ingestion import _json
@@ -16,7 +17,7 @@ def payload_for(config,messages,schema):
               for m in messages if m['role']!='system']
     return dict(systemInstruction=dict(parts=[dict(text='\n'.join(systems))]),contents=contents,
                 generationConfig=dict(maxOutputTokens=config.max_output_tokens,
-                    responseFormat=dict(text=dict(mimeType='application/json',schema=schema))))
+                    responseMimeType='application/json',responseJsonSchema=schema))
 
 
 class GeminiModel:
@@ -57,7 +58,9 @@ class GeminiModel:
                     raise failure('Gemini blocked or missing unique response')
                 candidate=candidates[0]
                 if candidate.get('finishReason')!='STOP':
-                    raise failure('Gemini response incomplete or refused')
+                    reason=candidate.get('finishReason')
+                    safe_reason=reason if reason in ('MAX_TOKENS','SAFETY','RECITATION','BLOCKLIST','PROHIBITED_CONTENT','SPII','OTHER','MALFORMED_FUNCTION_CALL') else 'UNKNOWN'
+                    raise failure('Gemini response incomplete or refused ('+safe_reason+')')
                 parts=candidate.get('content',{}).get('parts',[])
                 text=''.join(p['text'] for p in parts if 'text' in p and not p.get('thought',False))
                 if not text or type(tokens) is not int or tokens<0:
@@ -70,8 +73,26 @@ class GeminiModel:
                 return ModelReply(payload,tokens,attempt,(time.monotonic()-start)*1000)
             except HTTPError as error:
                 if error.code not in (408,409,429) and not 500<=error.code<=599 or attempt==self.config.retries:
-                    raise failure('Gemini HTTP request failed') from None
-            except (URLError,TimeoutError):
+                    hint=''
+                    if error.code==400:
+                        try:
+                            details=_json(error.read().decode('utf-8'))
+                            message=details.get('error',{}).get('message','')
+                            # Report only known schema field identifiers, never raw
+                            # API response text, notes, URLs or credentials.
+                            fields=[field for field in ('responseFormat','responseJsonSchema','additionalProperties','$defs','$ref')
+                                    if field in message]
+                            if fields:hint='; rejected schema/config fields: '+', '.join(fields)
+                            reasons={d.get('reason') for d in details.get('error',{}).get('details',[]) if isinstance(d,dict)}
+                            safe_reasons=reasons & {'API_KEY_INVALID','API_KEY_EXPIRED','API_KEY_SERVICE_BLOCKED','API_KEY_HTTP_REFERRER_BLOCKED','API_KEY_IP_ADDRESS_BLOCKED','SERVICE_DISABLED'}
+                            if safe_reasons:hint+='; reason: '+', '.join(sorted(safe_reasons))
+                            elif 'api key not valid' in message.lower():hint+='; reason: API_KEY_INVALID'
+                            elif 'api key expired' in message.lower():hint+='; reason: API_KEY_EXPIRED'
+                        except (ValueError,AttributeError,TypeError,UnicodeError):pass
+                    raise failure(f'Gemini HTTP request failed (status {error.code})'+hint) from None
+            except (socket.timeout,TimeoutError):
+                if attempt==self.config.retries:raise failure('Gemini request timed out') from None
+            except URLError:
                 if attempt==self.config.retries:raise failure('Gemini transport failed') from None
             except (ValueError,TypeError,KeyError,AttributeError):
                 raise failure('Invalid Gemini response') from None

@@ -231,3 +231,30 @@ def test_disposition_cannot_claim_coding_without_assignment(data):
     proposed["dispositions"][0].update(disposition="coded",assignment_code="D0")
     result=ModelPipeline(data,FakeModel(decide=proposed)).process(record())
     assert result.status=="unresolved" and result.findings[0].disposition=="unresolved"
+
+def test_schema_failure_reports_locations_without_untrusted_payload(data):
+    model=FakeModel(extract={'NONCLINICAL_SECRET_FIELD':'NONCLINICAL_SECRET_VALUE'})
+    result=ModelPipeline(data,model).process(record())
+    diagnostics=' '.join(result.unresolved)
+    assert 'Schema validation: findings: missing' in diagnostics
+    assert '<unexpected field>: extra_forbidden' in diagnostics
+    assert 'NONCLINICAL_SECRET' not in diagnostics
+    assert result.status=='unresolved' and not result.assignments
+
+@pytest.mark.parametrize('value',['7','7.0',' 7 ','7e0'])
+def test_numeric_fact_wire_representation_preserves_certainty_and_evidence(value):
+    from app.model_contracts import ExtractedFact
+    payload=dict(kind='age_years',value=value,unit='years',test_name=None,test_result=None,test_date=None,
+                 evidence=evidence(),certainty='uncertain')
+    fact=ExtractedFact.model_validate(payload)
+    assert fact.value==7.0 and fact.certainty=='uncertain'
+    assert fact.evidence.source_quote==payload['evidence']['source_quote']
+    assert payload['value']==value
+
+@pytest.mark.parametrize('value',['unknown','seven','7 days','NaN','1e999'])
+def test_numeric_fact_normalization_cannot_infer_missing_or_nonfinite_values(value):
+    from app.model_contracts import ExtractedFact
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError):
+        ExtractedFact.model_validate(dict(kind='age_years',value=value,unit='years',test_name=None,
+          test_result=None,test_date=None,evidence=evidence(),certainty='known'))
