@@ -1,86 +1,90 @@
 # Agentic clinical coding
 
-Python CLI for TXT/JSON/JSONL notes: BM25 retrieval, optional two-stage OpenAI/Gemini model
-reasoning, grounded evidence validation and one bounded structural repair. Every
-record produces one JSONL result with findings, confidence, citations and unresolved
-issues. **No-key mode currently abstains on all notes**; it preserves input rather
-than claiming clinical interpretation. Runtime needs no embedding downloads.
+Takes free-text consult notes and returns, for each note, ICD-11 code assignments or an
+explicit refusal, with the evidence, confidence and unresolved items behind the decision.
+
+## Run
 
 ```sh
-docker compose up --build
-# Pipeable JSONL; ./input is mounted read-only at /in:
+docker compose up --build        # builds, runs examples/messy_note.txt, exits
 mkdir -p out
 docker compose run --rm app --input /in/example.jsonl > out/result.jsonl
-# Put your own file in ./input, then use --input /in/custom.jsonl.
 ```
 
-Input may be TXT, JSON, JSONL or CSV; preferred fields are `note_id` and `text`. Other
-field names, string lists and wrapped arrays are read with a warning in the result; see the
-[input contract](docs/input_output_contract.md).
+Put your file in `./input` (mounted at `/in`) and pass `--input /in/<file>`. Input may be
+TXT, JSON, JSONL or CSV, preferably with `note_id` and `text` fields
+([input contract](docs/input_output_contract.md)). Output is one JSON object per note on
+stdout; logs go to stderr.
 
-Compose forwards model variables only if exported or in an untracked `.env`; a
-clean clone runs offline. Its default runs `examples/messy_note.txt` and exits. `compose up` displays Compose log prefixes;
-use `compose run` for machine-readable output. Build requires internet for the
-base image and pinned Python packages. Docker build, no-key startup and mounted batch JSONL output have been verified.
+A model is optional. Export `GEMINI_API_KEY`, `GEMINI_MODEL` and `GEMINI_CONTEXT_LIMIT` (or
+the `OPENAI_` equivalents) and Compose forwards them ([setup](docs/gemini.md)). **Without a
+key the pipeline still runs end to end, but every note is returned `unresolved`.**
 
-Local alternative (Python 3.9+):
+## What is implemented
 
-```sh
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python -m app.main --input examples/messy_note.txt --no-model
-python -m app.main --input input/example.jsonl --output out/local-result.jsonl --no-model
-python -m pytest -q
-```
+1. **Ingestion.** Every record yields exactly one result, including empty and malformed ones.
+2. **Trust scan.** Text addressed to the assistant, in a note or a guideline, is quarantined
+   and flagged; the clinical text around it is kept.
+3. **Retrieval.** BM25 over the catalogue and guidelines proposes candidates and context.
+4. **Stage 1 (model).** Extracts findings, each with an exact note quote and an assertion:
+   confirmed, suspected, negated, historical or patient-reported.
+5. **Stage 2 (model).** Reads all 404 `code | title` entries and all 45 raw guidelines,
+   judges each guideline's applicability, and proposes assignments or a refusal.
+6. **Validation.** A code is accepted only if its quotes exist in the note, it is in the
+   supplied catalogue, a confirmed current finding supports it, and every cited guideline
+   is applicable with its requirements met. One structural repair is allowed; it cannot
+   add or change an assignment.
 
-`requirements-lock.txt` pins the tested dependency versions used by Docker.
-The optional model reads environment variables described in
-[model configuration](docs/model_reasoning.md) and [Gemini setup](docs/gemini.md); copying `.env.example` alone does
-not load variables. No credentials are required for offline processing.
+Each result carries `status`, `assignments`, `findings`, `candidates_considered`,
+`retrieved_evidence`, `confidence` with what would raise or lower it, and `unresolved`.
 
-The unchanged 404 codes and 45 guidelines are untrusted evidence, not instructions.
-GDL-016 narrows GDL-017's pneumonia confirmation standard; GDL-045 preserves older,
-conflicting guidance. Stage 2 reviews the complete raw corpus and refuses unknown
-applicability; source quotations cannot prove its interpretation. GDL-041 contains
-an assistant-directed coding override: quarantine it while retaining benign text
-and warnings. All **50 derived drafts remain unverified**; no human-verified hard
-gates are claimed. Embeddings, LangGraph and OCR were left out to keep the text
-pipeline small and avoid additional downloads and orchestration.
+## What the data decided
 
-**Added data.** One external code is active: `1B71 | Necrotising fasciitis`
-(`http://id.who.int/icd/entity/522973276`, chapter 01). GDL-032 describes a necrotising
-infection and no supplied title names it, so every nearby supplied code is a wrong answer.
-Sources: [WHO's reference guide](https://icdcdn.who.int/icd11referenceguide/en/refguide.pdf)
-(PDF page 342) and WHO's [ICD-11 MMS 2026-01 release table](https://icdcdn.who.int/static/releasefiles/2026-01/SimpleTabulation-ICD-11-MMS-en.zip),
-used under CC BY-ND 3.0 IGO with code, title and URI kept. It lives in
-`data/expanded/proposals.json`, apart from the supplied files. The source check was done
-by the AI assistant at my instruction, not by an independent human or clinician. An
-expanded code is never assigned: a matching note returns `unresolved` with `1B71` as a
-sourced candidate. A second proposal, a
-[WHO skin-referral excerpt](https://cdn.who.int/media/docs/default-source/ntds/skin-ntds/common-skin-diseases-for-managemen-or-referral-at-primary-health-care-level.pdf),
-stays inactive because the document is a review draft with no reuse terms. The
-[source audit](docs/expansion_review.md) also records supplied titles that conflict with
-WHO's guide (CA22/CA40, 8B00); the supplied files are not rewritten.
+- The corpus is small, so Stage 2 reads all of it. Retrieval adds context but never decides
+  what the model may consider. Decided against: keyword-to-code tables, embeddings, and
+  rules keyed to a guideline ID or code.
+- 50 machine-readable constraint drafts were derived from the guidelines. None is verified,
+  so none is used as a hard gate.
 
-**What survives new notes.** One result per record, quotes checked against the original
-note, supplied-only assignments, quarantine of instructions inside notes and guidelines,
-and refusal when the diagnosis is outside the catalogue.
+## Guidance that disagrees
 
-**What will not.** Coding recall. The validator refuses more than it should: in single
-live runs on two Gemini models at most two of ten fixtures were coded, and an
-imaging-confirmed pneumonia (held-out E09) was refused both times. Output varies between
-runs on the smaller model, and no-key mode abstains on every note. Fixture expectations
-are AI-proposed and owner-approved, not independently reviewed, so the
-[testing report](docs/clinical_testing_report.md) is not an accuracy claim.
+- **Pneumonia.** GDL-017 (2023) accepts clinical findings alone. GDL-045, titled
+  "Deprecated", goes further and allows a definitive code at high confidence without
+  imaging. GDL-016 (2026) replaces that standard: definitive needs imaging, otherwise
+  provisional. Nothing is hard-coded; Stage 2 reads all three and is told that a newer date
+  alone does not establish precedence, only explicit supersession does.
+- **GDL-041** contains an embedded directive to return one code for any chest-pain note and
+  omit evidence. It is quarantined; the rest of the snippet is kept.
 
-**Not built, and next.** Independent clinical review of fixtures and guideline drafts, a
-repeatable multi-run live evaluation, and a less brittle validator. At 50,000 codes,
-replace full-corpus prompting with hierarchical chapter/code retrieval, candidate-recall
-checks and indexed guideline applicability.
+## Added data
 
-**Tooling.** Built with Codex, then Claude Code for live testing and fixes. Wrong and
-caught: the generated validator threw away a correct, grounded `AA30` answer on output
-bookkeeping, and mocked tests passed throughout; only a live run exposed it. Earlier, a
-trust-screening change missed `AI INSTRUCTION` until a regression test exposed it. See
-[validation and remaining requirements](docs/reproducibility.md).
+`1B71 | Necrotising fasciitis` (`http://id.who.int/icd/entity/522973276`), from WHO's
+[reference guide](https://icdcdn.who.int/icd11referenceguide/en/refguide.pdf) (PDF page 342)
+and [ICD-11 MMS 2026-01 release table](https://icdcdn.who.int/static/releasefiles/2026-01/SimpleTabulation-ICD-11-MMS-en.zip),
+under CC BY-ND 3.0 IGO. GDL-032 describes a necrotising infection that no supplied title
+names. It lives in `data/expanded/proposals.json`, apart from the supplied files, and is
+never assigned: a matching note returns `unresolved` with `1B71` as a sourced candidate.
+The source check was done by the AI assistant, not an independent reviewer
+([details](docs/expansion_review.md)).
+
+## What holds on new notes, and what does not
+
+Holds: one result per record, quote grounding, supplied-only assignments, instruction
+quarantine, refusal when the diagnosis is outside the catalogue.
+
+Does not: coding recall. The validator refuses more than it should: in single live runs on
+ten fixtures at most two were coded, and an imaging-confirmed pneumonia was refused. Results
+vary between runs on the smaller model ([testing report](docs/clinical_testing_report.md)).
+
+## Not built, and next
+
+No independent clinical review, no repeatable multi-run evaluation, no deterministic coding
+path without a key. Next: a less brittle validator. At 50,000 codes the full catalogue no
+longer fits one prompt: replace it with chapter-then-code retrieval, a candidate-recall
+check, and an index from guideline to applicable codes.
+
+## Tooling
+
+Built with Codex and Claude Code. Wrong and caught: the generated validator discarded a
+correct, grounded `AA30` answer over output bookkeeping while mocked tests passed; only a
+live run exposed it.
