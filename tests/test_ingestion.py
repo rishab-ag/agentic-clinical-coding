@@ -55,3 +55,40 @@ def test_empty_malformed_unsupported_and_missing_files(tmp_path):
         records=read_records(path)
         assert len(records)==1 and records[0].errors
     assert read_records(tmp_path/"missing.txt")[0].errors==["Input file cannot be read"]
+
+
+def test_alternative_shapes_are_read_with_warnings_not_errors(tmp_path):
+    rows=[("a1","dummy one"),("a2","dummy two")]
+    shapes={"alt.jsonl":"\n".join(json.dumps({"id":i,"note":t}) for i,t in rows),
+            "array.json":json.dumps([{"encounter_id":i,"clinician":"x","consult_note":t+" longer"} for i,t in rows]),
+            "wrapped.json":json.dumps({"notes":[{"note_id":i,"text":t} for i,t in rows]}),
+            "strings.json":json.dumps([t for _,t in rows]),
+            "table.csv":"id,note\n"+"\n".join(f'{i},"{t}"' for i,t in rows)+"\n",
+            "noext":"\n".join(json.dumps({"note_id":i,"text":t}) for i,t in rows),
+            "multi.txt":"dummy one\n---\ndummy two\n"}
+    for name,content in shapes.items():
+        path=tmp_path/name
+        path.write_text(content)
+        records=read_records(path)
+        assert len(records)==2 and not any(r.errors for r in records), name
+        assert [r.note.text.strip().replace(" longer","") for r in records]==["dummy one","dummy two"], name
+        if name not in ("wrapped.json","strings.json","multi.txt"):
+            assert [r.note.note_id for r in records]==["a1","a2"], name
+        if name!="strings.json":
+            assert all(r.warnings for r in records), name
+
+
+def test_unnamed_longest_text_field_is_flagged_and_unreadable_objects_still_error(tmp_path):
+    path=tmp_path/"odd.jsonl"
+    path.write_text(json.dumps({"ref":7,"k":"x","observations":"dummy long free text"})+"\n"+json.dumps({"ref":7,"n":3})+"\n")
+    first,second=read_records(path)
+    assert first.note.text=="dummy long free text" and "longest text field" in " ".join(first.warnings)
+    assert second.errors==["Note record text must be a string"]
+
+
+def test_plain_text_without_delimiters_or_json_stays_one_note(tmp_path):
+    path=tmp_path/"note.dat"
+    path.write_text("dummy line one\n\ndummy line two - still the same note\n")
+    records=read_records(path)
+    assert len(records)==1 and records[0].note.text==path.read_text() and not records[0].errors
+    assert "Unrecognised input extension" in records[0].warnings[0]

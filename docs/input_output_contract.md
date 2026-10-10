@@ -6,11 +6,23 @@ be established; clinical accuracy scoring remains deferred.
 
 UTF-8 input formats:
 
-- `.txt`: the entire file is one note, including newlines and empty text.
-- `.json`: one object or an array of objects, each with `note_id` (nonempty
-  string) and `text` (string). No guessing alternative field names.
-- `.jsonl`: one such object per physical line. Blank/malformed lines are
-  records that receive explicit unresolved errors, not silently skipped.
+- `.txt`: one note, including newlines and empty text. If the file contains
+  lines made only of three or more `-`, `=`, `*`, `_` or `#`, it is split into
+  one note per delimited block, with a warning on each record.
+- `.json`: one object, an array of objects or strings, or an object wrapping a
+  single array. The preferred fields are `note_id` and `text`.
+- `.jsonl` / `.ndjson`: one object or string per physical line. Blank/malformed
+  lines are records that receive explicit unresolved errors, not silently skipped.
+- `.csv` / `.tsv`: a header row, then one note per row.
+- Any other extension: the content decides (JSON, JSONL, otherwise one
+  plain-text note), with a warning naming the choice.
+
+When `text` is absent, note text is read from a recognised field name (`note`,
+`note_text`, `consult_note`, `content`, `body`, `narrative`, `free_text`), or
+failing that from the longest string field. When `note_id` is absent, the ID is
+read from the first field whose name ends in `id`. Every such inference is a
+warning on the result, and the original record is kept under `original_record`.
+A record with no string field at all is an explicit error, never a guess.
 
 Preserve order and supplied IDs. Missing or duplicate IDs receive a stable
 record-position identifier and a warning; retain the original record under

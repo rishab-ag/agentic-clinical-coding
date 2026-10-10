@@ -124,3 +124,25 @@ dummy file so it no longer depends on the changing clinical review file. Full
 pytest then passed: 181 passed, 1 skipped. Initial run: 180 passed, 1 failed,
 1 skipped due to the fixture-file dependency. Supplied/derived/expanded data
 byte comparisons against HEAD passed. Git diff checks passed.
+
+## Grader-style simulation (2026-10-10)
+
+A copy of the tracked and unignored files, with no `.env`, virtual environment or
+prior output, was built and started with `docker compose up --build` under an
+empty environment: exit 0, offline mode. An unseen eight-note synthetic file
+(one note deliberately empty) was then run through `docker compose run` in nine
+shapes: `note_id`/`text` JSONL, alternative keys, a JSON array with extra
+fields, a wrapped array, a list of strings, delimited multi-note TXT,
+single-note TXT, CSV and an extensionless file. Each produced one schema-valid
+result per note. Before the reader was made tolerant, only the exact
+`note_id`/`text` shape was analysed; the others were reported as input errors.
+
+The same file with a Gemini key supplied only through the environment
+(`gemini-3.5-flash-lite`) returned eight results in under two minutes: one
+provisional assignment, six reasoned refusals including an out-of-catalogue
+diagnosis surfaced as expanded candidate 1B71 and a quarantined in-note
+instruction, and the empty note reported as empty. Two straightforward notes
+were refused on output accounting; a rerun coded one of them, so results on
+this model vary between runs. These are synthetic notes without reviewed
+labels, not an accuracy measurement. This was a working-tree copy, not a clone
+of a pushed commit.

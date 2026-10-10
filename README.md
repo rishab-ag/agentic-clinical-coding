@@ -14,6 +14,10 @@ docker compose run --rm app --input /in/example.jsonl > out/result.jsonl
 # Put your own file in ./input, then use --input /in/custom.jsonl.
 ```
 
+Input may be TXT, JSON, JSONL or CSV; preferred fields are `note_id` and `text`. Other
+field names, string lists and wrapped arrays are read with a warning in the result; see the
+[input contract](docs/input_output_contract.md).
+
 Compose forwards model variables only if exported or in an untracked `.env`; a
 clean clone runs offline. Its default runs `examples/messy_note.txt` and exits. `compose up` displays Compose log prefixes;
 use `compose run` for machine-readable output. Build requires internet for the
