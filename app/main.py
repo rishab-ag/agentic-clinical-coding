@@ -1,10 +1,12 @@
 """Offline note-file CLI; stdout/output are JSONL, diagnostics are stderr."""
 import argparse
+import json
 import sys
 from pathlib import Path
 
 from app.data import DATA_DIR, load_supplied_data
 from app.models import CodingResult, Confidence, Provenance
+from app.output import compact
 from app.ingestion import read_records
 from app.pipeline import NoKeyPipeline
 from app.model_provider import model_from_environment
@@ -14,6 +16,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description="Clinical coding prototype (conservative offline pipeline)")
     parser.add_argument("--input", type=Path, help="Arbitrary TXT, JSON or JSONL note file")
     parser.add_argument("--output", type=Path, help="Also write the same JSONL to this path")
+    parser.add_argument("--full", action="store_true", help="Emit the complete audit record instead of the compact view")
     parser.add_argument("--no-model", action="store_true", help="Force offline mode even when credentials exist")
     parser.add_argument("--check-data", action="store_true", help="Validate supplied corpus and print counts/hashes to stderr")
     parser.add_argument("--self-check", action="store_true", help="Emit one synthetic unresolved bootstrap result as JSONL")
@@ -55,12 +58,17 @@ def main(argv=None):
                     pipeline = ModelPipeline(data,model)
             except (ValueError, TypeError):
                 print("Invalid model configuration; using conservative offline mode", file=sys.stderr)
+        titles = {entry.code: entry.title for entry in data.catalogue}
+        def render(result):
+            if args.full:
+                return result.model_dump_json()
+            return json.dumps(compact(result, titles), ensure_ascii=False)
         output = None
         try:
             if args.output:
                 output = args.output.open("w", encoding="utf-8")
             for result in pipeline.run(records):
-                line = result.model_dump_json() + "\n"
+                line = render(result) + "\n"
                 if output:
                     output.write(line)
                 sys.stdout.write(line)

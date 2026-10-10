@@ -34,6 +34,15 @@ JSONL invalid UTF-8 is isolated per line; original bytes are base64-preserved.
 Duplicate JSON keys, nonstandard constants and unpaired Unicode surrogates are
 rejected and the raw input retained. Extra object fields are retained as data.
 
+By default each line is a compact view with exactly the fields the brief asks
+for: `note_id`, `status`, `assignments` (code, title, certainty, confidence,
+note quotes, guideline IDs), `confidence` with `increase_if`/`decrease_if`,
+`unresolved`, plus `findings` with dispositions, `candidates_considered`,
+`guidelines_retrieved`, `safety_flags`, `warnings`, `mode` and `model`. Pass
+`--full` for the complete audit record described below (hashes, offsets, raw
+guideline text, original record, provenance). The paragraph below describes
+the full record.
+
 Stdout and `--output` contain identical JSONL: one CodingResult JSON object
 per line, including a single TXT note. Operational logs go to stderr. Original
 note text is retained. The bootstrap `--self-check` already emits this format,

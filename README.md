@@ -37,8 +37,10 @@ runs end to end, but every note is returned `unresolved`.**
    is applicable with its requirements met. One structural repair is allowed; it cannot
    add or change an assignment.
 
-Each result carries `status`, `assignments`, `findings`, `candidates_considered`,
-`retrieved_evidence`, `confidence` with what would raise or lower it, and `unresolved`.
+Each output line carries `status`, `assignments` (code, title, note quotes, guideline IDs),
+`confidence` with what would raise or lower it, `unresolved`, and the `findings`,
+`candidates_considered` and `guidelines_retrieved` behind the decision. `--full` adds the
+complete audit record (hashes, offsets, raw guideline text, provenance).
 
 ## What the data decided
 

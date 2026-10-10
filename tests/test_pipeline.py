@@ -10,6 +10,10 @@ import pytest
 from app.data import load_supplied_data
 from app.ingestion import read_records
 from app.models import CodingResult
+from app.output import compact
+
+COMPACT_KEYS={"note_id","status","mode","model","assignments","confidence","unresolved","findings",
+              "candidates_considered","guidelines_retrieved","safety_flags","warnings"}
 from app.pipeline import NoKeyPipeline
 
 
@@ -92,9 +96,12 @@ def test_cli_no_key_jsonl_and_output_identical(tmp_path):
     output=tmp_path/"output.jsonl"
     process=subprocess.run([sys.executable,"-m","app.main","--input",str(source),"--output",str(output)],capture_output=True,text=True,env=env)
     assert process.returncode==0 and output.read_text()==process.stdout
-    results=[CodingResult.model_validate_json(line) for line in process.stdout.splitlines()]
-    assert len(results)==4 and all(r.status=="unresolved" for r in results)
-    assert [r.note_id for r in (results[0],results[-1])]==["one","last"]
+    results=[json.loads(line) for line in process.stdout.splitlines()]
+    assert len(results)==4 and all(r["status"]=="unresolved" for r in results)
+    assert [r["note_id"] for r in (results[0],results[-1])]==["one","last"]
+    assert set(results[0])==COMPACT_KEYS and not {"original_note","provenance","retrieved_evidence"}&set(results[0])
+    full=subprocess.run([sys.executable,"-m","app.main","--input",str(source),"--no-model","--full"],capture_output=True,text=True,env=env)
+    assert [CodingResult.model_validate_json(line).note_id for line in full.stdout.splitlines()]==[r["note_id"] for r in results]
     baseline=source.read_bytes()
     blocked=subprocess.run([sys.executable,"-m","app.main","--input",str(source),"--output",str(source)],capture_output=True,text=True)
     assert blocked.returncode==1 and not blocked.stdout and source.read_bytes()==baseline
@@ -123,3 +130,24 @@ def test_bad_output_path_fails_on_stderr_without_stdout(tmp_path):
     result=subprocess.run([sys.executable,"-m","app.main","--input","examples/messy_note.txt",
                            "--output",str(tmp_path/"missing-dir"/"result.jsonl")],capture_output=True,text=True)
     assert result.returncode==1 and not result.stdout and "Unable to write output" in result.stderr
+
+
+def test_compact_view_keeps_the_four_required_items_and_expanded_sources():
+    from app.models import Assignment, Candidate, Confidence, Evidence, Finding, Provenance
+    quote=Evidence(source_type="note",source_id="n",source_quote="NONCLINICAL QUOTE")
+    result=CodingResult(note_id="n",original_note="NONCLINICAL QUOTE",status="coded",
+        assignments=[Assignment(code="D0",catalogue_origin="supplied",finding_ids=["f1"],evidence=[quote],certainty="definitive",
+                                confidence=Confidence(level="moderate"),guideline_ids=["S1"])],
+        findings=[Finding(finding_id="f1",type="other",evidence=quote,assertion="confirmed",encounter_relevant=True,
+                          attributes={},disposition="coded",reason="NONCLINICAL reason",assignment_code="D0")],
+        candidates_considered=[Candidate(code="X1",title="NONCLINICAL EXTERNAL",catalogue_origin="expanded",retrieval_score=1,
+                          source="https://example.invalid/src",status="unresolved",reason="NONCLINICAL",missing_discriminators=[])],
+        confidence=Confidence(level="moderate",increase_if=["a"],decrease_if=["b"]),
+        provenance=Provenance(mode="model",catalogue_sha256="0"*64,guidelines_sha256="1"*64,model="dummy-model"))
+    view=compact(result,{"D0":"NONCLINICAL TITLE"})
+    assert set(view)==COMPACT_KEYS and view["model"]=="dummy-model"
+    assert view["assignments"]==[dict(code="D0",title="NONCLINICAL TITLE",certainty="definitive",confidence="moderate",
+                                      note_evidence=["NONCLINICAL QUOTE"],guideline_ids=["S1"])]
+    assert view["confidence"]==dict(level="moderate",increase_if=["a"],decrease_if=["b"])
+    assert view["candidates_considered"][0]["source"]=="https://example.invalid/src"
+    assert view["findings"][0]["disposition"]=="coded"

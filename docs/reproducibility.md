@@ -52,13 +52,13 @@ JSONL validation (not a clinical evaluation):
 
 ```sh
 python - <<'PY'
+import json
 from pathlib import Path
-from app.models import CodingResult
 rows = Path('out/docker-output.jsonl').read_text().splitlines()
 assert len(rows) == 2
 for row in rows:
-    CodingResult.model_validate_json(row)
-print('2 schema-valid records')
+    assert {"note_id", "status", "assignments", "confidence", "unresolved"} <= set(json.loads(row))
+print('2 compact records')
 PY
 ```
 
