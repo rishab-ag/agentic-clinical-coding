@@ -37,10 +37,9 @@ runs end to end, but every note is returned `unresolved`.**
    is applicable with its requirements met. One structural repair is allowed; it cannot
    add or change an assignment.
 
-Each output line carries `status`, `assignments` (code, title, note quotes, guideline IDs),
-`confidence` with what would raise or lower it, `unresolved`, and the `findings`,
-`candidates_considered` and `guidelines_retrieved` behind the decision. `--full` adds the
-complete audit record (hashes, offsets, raw guideline text, provenance).
+Each output line carries `status`, `assignments`, `confidence` (with what would raise or
+lower it), `unresolved`, and the `findings`, `candidates_considered` and
+`guidelines_retrieved` behind the decision. `--full` adds the complete audit record.
 
 ## What the data decided
 
@@ -87,12 +86,26 @@ not clinical choice: the smaller model once coded an organism-unidentified pneum
 bacterial pneumonia, and results vary between runs
 ([testing report](docs/clinical_testing_report.md)).
 
-## Not built, and next
+## Not built, and scaling
 
-No independent clinical review, no repeatable multi-run evaluation, no deterministic coding
-path without a key. Next: a less brittle validator. At 50,000 codes the full catalogue no
-longer fits one prompt: replace it with chapter-then-code retrieval, a candidate-recall
-check, and an index from guideline to applicable codes.
+Not built: independent clinical review, a repeatable multi-run evaluation, and a
+deterministic coding path without a key. Next: a less brittle validator.
+
+**Scaling.** Stage 2 sends the whole catalogue and guideline set, about 22,000 input tokens
+per note, roughly half of it duplicated wrapper that could be trimmed. That suits 404 codes
+and 45 guidelines, because no retrieval miss can hide a restriction, and fails beyond a few
+thousand codes. At 50,000 codes, or 1M codes and 5M guidelines, only candidate generation
+changes:
+
+1. narrow by chapter, then to about 50 candidate codes (keyword plus embedding search);
+2. look up the guidelines governing those codes in an index built offline, with
+   human-verified scope and supersession links;
+3. send the model that shortlist instead of everything.
+
+Ingestion, trust scan, the two model stages, the validator, the refusal default and the
+output contract carry over unchanged. The new risk is a retrieval miss, so candidate recall
+must be measured on labelled notes, and the system should refuse when the right code or
+governing guideline is not in the shortlist.
 
 ## Tooling
 
